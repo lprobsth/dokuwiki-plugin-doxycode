@@ -134,6 +134,10 @@ class helper_plugin_doxycode_tagmanager extends Plugin {
         return $tag_conf;
     }
 
+    public function filterEnabledConfig(&$tag_conf) {
+        return array_filter($tag_conf,array($this, 'isConfigEnabled'));;
+    }
+
     public function isConfigEnabled(&$tag_conf) {
         return boolval($tag_conf['enabled']);
     }
