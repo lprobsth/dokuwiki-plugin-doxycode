@@ -134,8 +134,8 @@ class helper_plugin_doxycode_tagmanager extends Plugin {
         return $tag_conf;
     }
 
-    public function isConfigEnabled(&$conf) {
-        return boolval($conf['enabled']);
+    public function isConfigEnabled(&$tag_conf) {
+        return boolval($tag_conf['enabled']);
     }
 
     public function isValidRemoteConfig(&$conf) {
