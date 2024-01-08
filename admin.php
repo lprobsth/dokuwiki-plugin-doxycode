@@ -33,6 +33,15 @@ class admin_plugin_doxycode extends AdminPlugin {
     private $helper;
     private $tag_config;
 
+    // TODO: these should be minimum widths
+    private $conf_column_widths = array(
+        'local_name' => 16,
+        'docu_url' => 35,
+        'remote_url' => 35,
+        'update_period' => 5,
+        'description' => 40
+    );
+
     function __construct() {
         $this->helper = plugin_load('helper', 'doxycode_tagmanager');
 
@@ -232,7 +241,7 @@ class admin_plugin_doxycode extends AdminPlugin {
             // TODO: add red highlight if this file does not exist
             $form->addTagOpen('td');
             $new_name = $form->addTextInput('tag_config[' . $key . '][new_name]')
-                ->attrs(['size' => 20])
+                ->attrs(['size' => $this->conf_column_widths['local_name']])
                 ->useInput(false);
 
             if(file_exists($this->helper->getFileName($key))) {
@@ -257,21 +266,21 @@ class admin_plugin_doxycode extends AdminPlugin {
 
             $form->addTagOpen('td');
             $form->addTextInput('tag_config[' . $key . '][docu_url]')
-                ->attrs(['size' => 50])
+                ->attrs(['size' => $this->conf_column_widths['docu_url']])
                 ->useInput(false)
                 ->val($tag_conf['docu_url']);
             $form->addTagClose('td');
 
             $form->addTagOpen('td');
             $form->addTextInput('tag_config[' . $key . '][remote_url]')
-                ->attrs(['size' => 50])
+                ->attrs(['size' => $this->conf_column_widths['remote_url']])
                 ->useInput(false)
                 ->val($tag_conf['remote_url']);
             $form->addTagClose('td');
 
             $form->addTagOpen('td');
             $period = $form->addTextInput('tag_config[' . $key . '][update_period]')
-                ->attrs(['size' => 10])
+                ->attrs(['size' => $this->conf_column_widths['update_period']])
                 ->useInput(false)
                 ->val($tag_conf['update_period']);
 
@@ -316,7 +325,7 @@ class admin_plugin_doxycode extends AdminPlugin {
 
             $form->addTagOpen('td');
             $form->addTextInput('tag_config[new][new_name]')
-                ->attrs(['size' => 20])
+                ->attrs(['size' => $this->conf_column_widths['local_name']])
                 ->useInput(false);
             $form->addTagClose('td');
 
@@ -325,19 +334,19 @@ class admin_plugin_doxycode extends AdminPlugin {
 
             $form->addTagOpen('td');
             $form->addTextInput('tag_config[new][docu_url]')
-                ->attrs(['size' => 50])
+                ->attrs(['size' => $this->conf_column_widths['docu_url']])
                 ->useInput(false);
             $form->addTagClose('td');
 
             $form->addTagOpen('td');
             $form->addTextInput('tag_config[new][remote_url]')
-                ->attrs(['size' => 50])
+                ->attrs(['size' => $this->conf_column_widths['remote_url']])
                 ->useInput(false);
             $form->addTagClose('td');
 
             $form->addTagOpen('td');
             $form->addTextInput('tag_config[new][update_period]')
-                ->attrs(['size' => 10])
+                ->attrs(['size' => $this->conf_column_widths['update_period']])
                 ->useInput(false);
             $form->addTagClose('td');
         $form->addTagClose('tr');
