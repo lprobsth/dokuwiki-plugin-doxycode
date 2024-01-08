@@ -30,10 +30,11 @@ $lang['admin_new_entry'] = 'Add new entry:';
 
 // some values on the admin page are repeated from the taglist for shorter versions due to limited width
 $lang['admin_conf_delete'] = 'Del';
-$lang['admin_conf_enabled'] = 'Enabled';
+$lang['admin_conf_enabled'] = 'Enable';
 $lang['admin_conf_force_runner'] = 'Force Runner';
 $lang['admin_conf_local_name'] = 'Local Name';
 $lang['admin_conf_mtime'] = 'File mtime';
 $lang['admin_conf_docu_url'] = 'Documentation URL';
 $lang['admin_conf_remote_url'] = 'Remote URL';
 $lang['admin_conf_update_period'] = 'Update Period';
+$lang['admin_conf_description'] = 'Description';

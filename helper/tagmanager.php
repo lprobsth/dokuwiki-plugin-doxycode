@@ -82,7 +82,7 @@ class helper_plugin_doxycode_tagmanager extends Plugin {
     }
 
     public function saveTagFileConfig(&$tag_config,$restore_mtime = false) {
-        $save_key_selection = ['remote_url','update_period','docu_url','enabled','last_update','force_runner'];
+        $save_key_selection = ['remote_url','update_period','docu_url','enabled','last_update','force_runner','description'];
 
         $selectedKeys = [];
 

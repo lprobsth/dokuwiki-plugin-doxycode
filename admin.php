@@ -209,6 +209,7 @@ class admin_plugin_doxycode extends AdminPlugin {
         $form->addHTML('<th>' . $this->getLang('admin_conf_docu_url') . '</th>');
         $form->addHTML('<th>' . $this->getLang('admin_conf_remote_url') . '</th>');
         $form->addHTML('<th>' . $this->getLang('admin_conf_update_period') . '</th>');
+        $form->addHTML('<th>' . $this->getLang('admin_conf_description') . '</th>');
 
         $form->addTagClose('tr');
 
@@ -296,6 +297,13 @@ class admin_plugin_doxycode extends AdminPlugin {
             }
             $form->addTagClose('td');
 
+            $form->addTagOpen('td');
+            $form->addTextInput('tag_config[' . $key . '][description]')
+                ->attrs(['size' => $this->conf_column_widths['description']])
+                ->useInput(false)
+                ->val($tag_conf['description']);
+            $form->addTagClose('td');
+
             $form->addTagClose('tr');
         }
 
@@ -347,6 +355,12 @@ class admin_plugin_doxycode extends AdminPlugin {
             $form->addTagOpen('td');
             $form->addTextInput('tag_config[new][update_period]')
                 ->attrs(['size' => $this->conf_column_widths['update_period']])
+                ->useInput(false);
+            $form->addTagClose('td');
+
+            $form->addTagOpen('td');
+            $form->addTextInput('tag_config[' . $key . '][description]')
+                ->attrs(['size' => $this->conf_column_widths['description']])
                 ->useInput(false);
             $form->addTagClose('td');
         $form->addTagClose('tr');
