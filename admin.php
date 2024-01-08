@@ -71,11 +71,11 @@ class admin_plugin_doxycode extends AdminPlugin {
         if($cmd['update'] && isset($_FILES['upload']) && $_FILES['upload']['error'] != UPLOAD_ERR_NO_FILE) {
             if ($_FILES['upload']['error'] == 0){
                 if ('xml' != pathinfo($_FILES['upload']['name'], PATHINFO_EXTENSION)){
-                    msg(printf($this->getLang('admin_err_no_xml_file'),$_FILES['upload']['name']), 2);
+                    msg(sprintf($this->getLang('admin_err_no_xml_file'),$_FILES['upload']['name']), 2);
                 }else {
                     move_uploaded_file($_FILES['upload']['tmp_name'],
                         DOKU_PLUGIN.'doxycode/tagfiles/'.$_FILES['upload']['name']);
-                    msg(printf($this->getLang('admin_info_upload_success'),$_FILES['upload']['name']), 1);
+                    msg(sprintf($this->getLang('admin_info_upload_success'),$_FILES['upload']['name']), 1);
                     $this->tag_config[pathinfo($_FILES['upload']['name'], PATHINFO_FILENAME)] = [];
                 }
             } else {
@@ -94,7 +94,7 @@ class admin_plugin_doxycode extends AdminPlugin {
 
                 // add new tag_config element to global config
                 $this->tag_config[$newKey] = $new_tag_config['new'];
-                msg(printf($this->getLang('admin_info_new_tag_config'),$newKey), 1);
+                msg(sprintf($this->getLang('admin_info_new_tag_config'),$newKey), 1);
             }
             unset($new_tag_config['new']); // Remove the 'new' placeholder
         }
@@ -138,7 +138,7 @@ class admin_plugin_doxycode extends AdminPlugin {
                     $filename = $this->helper->getTagFileDir() . $key . '.xml';
                     if(file_exists($filename)) {
                         unlink($filename);
-                        msg(printf($this->getLang('admin_info_tag_deleted'),pathinfo($filename, PATHINFO_BASENAME)), 1);
+                        msg(sprintf($this->getLang('admin_info_tag_deleted'),pathinfo($filename, PATHINFO_BASENAME)), 1);
                     }
                 }
             }
