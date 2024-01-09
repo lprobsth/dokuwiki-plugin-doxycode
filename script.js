@@ -30,33 +30,43 @@ jQuery(function(){
                 return jQuery(this).data('doxycode-xml-hash') === hashInfo.xmlHash &&
                        jQuery(this).data('doxycode-html-hash') === hashInfo.htmlHash;
             });
-            switch(parseInt(hashInfo.state)) {
-                case BuildmanagerStates.STATE_NON_EXISTENT: {
-                    $markers.each(function() {
-                        jQuery(this).text(LANG.plugins.doxycode.msg_not_existent);
-                    });
-                    break;
-                }
-                case BuildmanagerStates.STATE_SCHEDULED: {
-                    $markers.each(function() {
-                        jQuery(this).text(LANG.plugins.doxycode.msg_scheduled);
-                    });
-                    break;
-                }
-                case BuildmanagerStates.STATE_RUNNING: {
-                    $markers.each(function() {
-                        jQuery(this).text(LANG.plugins.doxycode.msg_running);
-                    });
-                    break;
-                }
-                case BuildmanagerStates.STATE_FINISHED: {
-                    loadSnippet({
-                        xmlHash: hashInfo.xmlHash,
-                        htmlHash: hashInfo.htmlHash
-                    });
-                    break;
-                }
+
+            var $loadingAnimation;
+            if(parseInt(hashInfo.state) != BuildmanagerStates.STATE_FINISHED) {
+                $loadingAnimation = jQuery('<img src="'+DOKU_BASE+'lib/images/throbber.gif" alt="" width="16" height="16" />');
             }
+
+            $markers.each(function() {
+                var $currentMarker = jQuery(this);
+                $currentMarker.empty();
+
+                var message;
+                switch(parseInt(hashInfo.state)) {
+                    case BuildmanagerStates.STATE_NON_EXISTENT:
+                        message = LANG.plugins.doxycode.msg_not_existent;
+                        break;
+                    case BuildmanagerStates.STATE_SCHEDULED:
+                        message = LANG.plugins.doxycode.msg_scheduled;
+                        break;
+                    case BuildmanagerStates.STATE_RUNNING:
+                        message = LANG.plugins.doxycode.msg_running;
+                        break;
+                    case BuildmanagerStates.STATE_FINISHED:
+                        loadSnippet({
+                            xmlHash: hashInfo.xmlHash,
+                            htmlHash: hashInfo.htmlHash
+                        });
+                        return; // Skip appending for finished state
+                }
+        
+                if ($loadingAnimation) {
+                    $currentMarker.append($loadingAnimation.clone());
+                }
+        
+                if (message) {
+                    $currentMarker.append(message);
+                }
+            });
         });
     }
 
