@@ -223,6 +223,7 @@ class action_plugin_doxycode extends ActionPlugin {
         switch($event->data) {
             case 'plugin_doxycode_check_status':
             case 'plugin_doxycode_get_snippet_html':
+            case 'plugin_doxycode_get_tag_files':
                 break;
             default:
                 return;
@@ -255,7 +256,7 @@ class action_plugin_doxycode extends ActionPlugin {
             echo json_encode($hashes);
 
             return;
-        }
+        } // plugin_doxycode_check_status
 
         if($event->data === 'plugin_doxycode_get_snippet_html') {
             header('Content-Type: application/json');
@@ -333,6 +334,26 @@ class action_plugin_doxycode extends ActionPlugin {
             }
 
             echo json_encode($data);
+            return;
+        } // plugin_doxycode_get_snippet_html
+
+        if($event->data === 'plugin_doxycode_get_tag_files') {
+            // the client has requested a list of available tag file configurations
+
+            /** @var helper_plugin_doxycode_tagmanager $tagmanager */
+            $tagmanager = plugin_load('helper', 'doxycode_tagmanager');
+
+            // load the tag file configuration
+            $tag_config = $tagmanager->loadTagFileConfig();
+
+            // filter only enabled configuration
+            $tagmanager->filterEnabledConfig($tag_config);
+
+            header('Content-Type: application/json');
+
+            // send data
+            echo json_encode($tag_config);
+
             return;
         }
     }
