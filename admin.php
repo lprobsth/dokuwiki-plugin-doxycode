@@ -359,7 +359,7 @@ class admin_plugin_doxycode extends AdminPlugin {
             $form->addTagClose('td');
 
             $form->addTagOpen('td');
-            $form->addTextInput('tag_config[' . $key . '][description]')
+            $form->addTextInput('tag_config[new][description]')
                 ->attrs(['size' => $this->conf_column_widths['description']])
                 ->useInput(false);
             $form->addTagClose('td');
