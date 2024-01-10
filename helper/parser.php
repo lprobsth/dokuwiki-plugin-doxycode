@@ -181,7 +181,12 @@ class helper_plugin_doxycode_parser extends Plugin {
             $output .= $last;
         } else {
             // probably 'compound'
-            $output .= $ref . ".html";
+            $output .= $ref;
+
+            // some refs are directly the wanted page (includes, ...)
+            if (substr($output, -5) !== '.html') {
+                $output .= ".html";
+            }
         }
 
         return $output;
