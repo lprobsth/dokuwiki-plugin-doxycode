@@ -1,0 +1,4 @@
+
+#doxycode__tagselector_result tr.selected {
+    background-color: @ini_background_alt;
+}

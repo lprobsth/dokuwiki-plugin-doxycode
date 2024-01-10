@@ -30,6 +30,8 @@ class action_plugin_doxycode extends ActionPlugin {
         $controller->register_hook('INDEXER_TASKS_RUN', 'AFTER', $this, 'renderDoxyCodeSnippets');
         $controller->register_hook('PARSER_CACHE_USE', 'BEFORE', $this, 'beforeParserCacheUse');
         $controller->register_hook('AJAX_CALL_UNKNOWN', 'BEFORE', $this, 'ajaxCall');
+        $controller->register_hook('TOOLBAR_DEFINE', 'AFTER', $this, 'insertTagButton');
+        $controller->register_hook('RPC_CALL_ADD','AFTER',$this,'add_rpc_all');
     }
     
     
@@ -223,6 +225,7 @@ class action_plugin_doxycode extends ActionPlugin {
         switch($event->data) {
             case 'plugin_doxycode_check_status':
             case 'plugin_doxycode_get_snippet_html':
+            case 'plugin_doxycode_get_tag_files':
                 break;
             default:
                 return;
@@ -255,7 +258,7 @@ class action_plugin_doxycode extends ActionPlugin {
             echo json_encode($hashes);
 
             return;
-        }
+        } // plugin_doxycode_check_status
 
         if($event->data === 'plugin_doxycode_get_snippet_html') {
             header('Content-Type: application/json');
@@ -334,7 +337,46 @@ class action_plugin_doxycode extends ActionPlugin {
 
             echo json_encode($data);
             return;
+        } // plugin_doxycode_get_snippet_html
+
+        if($event->data === 'plugin_doxycode_get_tag_files') {
+            // the client has requested a list of available tag file configurations
+
+            /** @var helper_plugin_doxycode_tagmanager $tagmanager */
+            $tagmanager = plugin_load('helper', 'doxycode_tagmanager');
+
+            // load the tag file configuration
+            $tag_config = $tagmanager->getFilteredTagConfig();
+
+            // filter only enabled configuration
+            $tagmanager->filterEnabledConfig($tag_config);
+
+            header('Content-Type: application/json');
+
+            // send data
+            echo json_encode($tag_config);
+
+            return;
         }
+    }
+
+    public function insertTagButton(Event $event) {
+        $event->data[] = array (
+            'type' => 'doxycodeTagSelector',
+            'title' => 'doxycode',
+            'icon' => DOKU_REL.'lib/plugins/doxycode/images/toolbar/doxycode.png',
+            'open'   => '<doxycode>',
+            'close'  => '</doxycode>',
+            'block'  => false
+        );
+    }
+
+    public function add_rpc_all(&$event, $param){
+        $my_rpc_call=array(
+            'doxycode.listTagFiles' => array('doxycode', 'listTagFiles'),
+            'doxycode.uploadTagFile'=>array('doxycode', 'uploadTagFile')
+        );
+        $event->data=array_merge($event->data,$my_rpc_call);
     }
 }
 
