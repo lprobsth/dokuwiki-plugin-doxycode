@@ -4,6 +4,14 @@ $lang['js']['msg_scheduled'] = 'The doxygen build has been scheduled. This state
 $lang['js']['msg_running'] = 'The doxygen build is currently running. The snippet will automatically load after finishing!';
 $lang['js']['msg_not_existent'] = 'The doxygen build is not existent. Try to reload the page!';
 
+// text for the doxycode tag selector in the edit toolbar
+$lang['js']['tag_selector_title'] = 'Doxycode Tag Selector';
+$lang['js']['tag_selector_name'] = 'Name';
+$lang['js']['tag_selector_description'] = 'Description';
+$lang['js']['tag_selector_search'] = 'Search for tags:';
+$lang['js']['tag_selector_btn_insert'] = 'Insert';
+$lang['js']['tag_selector_btn_update'] = 'Update';
+
 $lang['msg_scheduled'] = 'The doxygen build has been scheduled. Please reload the page later!';
 $lang['msg_running'] = 'The doxygen build is currently running. Please reload the page later!';
 $lang['msg_not_existent'] = 'The doxygen build is not existent. Try to reload the page!';

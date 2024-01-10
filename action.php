@@ -30,6 +30,7 @@ class action_plugin_doxycode extends ActionPlugin {
         $controller->register_hook('INDEXER_TASKS_RUN', 'AFTER', $this, 'renderDoxyCodeSnippets');
         $controller->register_hook('PARSER_CACHE_USE', 'BEFORE', $this, 'beforeParserCacheUse');
         $controller->register_hook('AJAX_CALL_UNKNOWN', 'BEFORE', $this, 'ajaxCall');
+        $controller->register_hook('TOOLBAR_DEFINE', 'AFTER', $this, 'insertTagButton');
     }
     
     
@@ -356,6 +357,17 @@ class action_plugin_doxycode extends ActionPlugin {
 
             return;
         }
+    }
+
+    public function insertTagButton(Event $event) {
+        $event->data[] = array (
+            'type' => 'doxycodeTagSelector',
+            'title' => 'doxycode',
+            'icon' => DOKU_REL.'lib/plugins/doxycode/images/toolbar/doxycode.png',
+            'open'   => '<doxycode>',
+            'close'  => '</doxycode>',
+            'block'  => false
+        );
     }
 }
 

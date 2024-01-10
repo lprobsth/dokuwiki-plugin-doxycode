@@ -1,3 +1,4 @@
+/* DOKUWIKI:include scripts/tagselector.js */
 
 jQuery(function(){
     // TODO: make this configurable by the admin
@@ -132,3 +133,32 @@ jQuery(function(){
 
     requestJobStatus();
 });
+
+/**
+ * Add button action for the doxycode tag selector button
+ * 
+ * Adapted from the linkwiz dialog
+ *
+ * @param  DOMElement btn   Button element to add the action to
+ * @param  array      props Associative array of button properties
+ * @param  string     edid  ID of the editor textarea
+ * @return boolean    If button should be appended
+ * @author Andreas Gohr <gohr@cosmocode.de>
+ * @author Lukas Probsthain <lukas.probsthain@gmail.com>
+ */
+function addBtnActionDoxycodeTagSelector($btn, props, edid) {
+    doxycode_tagselector.init(jQuery('#'+edid));
+    jQuery($btn).click(function(e){
+        doxycode_tagselector.val = props;
+        doxycode_tagselector.toggle();
+        e.preventDefault();
+        return '';
+    });
+    return 'doxycode__tagselector';
+
+
+
+
+    
+
+}
