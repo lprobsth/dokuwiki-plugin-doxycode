@@ -86,6 +86,10 @@ class helper_plugin_doxycode_tagmanager extends Plugin {
 
         $selectedKeys = [];
 
+        if(!is_dir($this->tagfile_dir)) {
+            mkdir($this->tagfile_dir);
+        }
+
         $config_filename = $this->tagfile_dir . 'tagconfig.json';
 
         // loop over all configuration entries
