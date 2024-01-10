@@ -119,6 +119,9 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
         if(!isset($args['language']) && isset($args['filename'])) {
             $args['language'] = pathinfo($args['filename'], PATHINFO_EXTENSION);
         }
+
+        // TODO: sort arguments, so hashes for the attributes always stay the same
+        // otherwise the hash might change if we change the order of the arguments in the page
     
         return $args;
     }

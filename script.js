@@ -80,7 +80,7 @@ jQuery(function(){
         });
 
         $markers.each(function() {
-            // TODO: dynamically load the HTML for this snippet!
+            // dynamically load the HTML for this snippet!
             var parent_element = jQuery(this).parent();
             jQuery(this).remove();
             jQuery(parent_element).append(response.html);
