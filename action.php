@@ -31,6 +31,7 @@ class action_plugin_doxycode extends ActionPlugin {
         $controller->register_hook('PARSER_CACHE_USE', 'BEFORE', $this, 'beforeParserCacheUse');
         $controller->register_hook('AJAX_CALL_UNKNOWN', 'BEFORE', $this, 'ajaxCall');
         $controller->register_hook('TOOLBAR_DEFINE', 'AFTER', $this, 'insertTagButton');
+        $controller->register_hook('RPC_CALL_ADD','AFTER',$this,'add_rpc_all');
     }
     
     
@@ -368,6 +369,14 @@ class action_plugin_doxycode extends ActionPlugin {
             'close'  => '</doxycode>',
             'block'  => false
         );
+    }
+
+    public function add_rpc_all(&$event, $param){
+        $my_rpc_call=array(
+            'doxycode.listTagFiles' => array('doxycode', 'listTagFiles'),
+            'doxycode.uploadTagFile'=>array('doxycode', 'uploadTagFile')
+        );
+        $event->data=array_merge($event->data,$my_rpc_call);
     }
 }
 
