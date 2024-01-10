@@ -1,6 +1,8 @@
+/* DOKUWIKI:include scripts/tagselector.js */
 
 jQuery(function(){
-    var currentInterval = 5000; // Starting interval in milliseconds
+    // TODO: make this configurable by the admin
+    var currentInterval = 1000; // Starting interval in milliseconds
     var maxInterval = 10000; // Maximum interval is 10 seconds
 
     const BuildmanagerStates = {
