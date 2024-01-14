@@ -351,6 +351,8 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         }
 
         $this->_unlock();
+
+        return true;
     }
 
 
