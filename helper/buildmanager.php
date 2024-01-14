@@ -64,6 +64,13 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         'language'
     );
 
+    /**
+     * @var String[] Configuration strings that are only relevant for the snippet syntax.
+     */
+    private $conf_doxycode_keys = array(
+        'render_task'
+    );
+
     function __construct()
     {
         // check if sqlite is available
@@ -506,6 +513,10 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         } else {
             $filtered_config = array_diff_key($config, array_flip($this->conf_doxygen_keys));
         }
+
+
+        // filter out keys that are only relevant for the snippet syntax
+        $filtered_config = array_diff_key($filtered_config, array_flip($this->conf_doxycode_keys));
 
         $filtered_config = is_array($filtered_config) ? $filtered_config : [$filtered_config];
 
