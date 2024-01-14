@@ -95,10 +95,24 @@ class helper_plugin_doxycode_tagmanager extends Plugin {
         }
     }
 
+    /**
+     * Save the tag file configuration as json in the tag file directory.
+     * 
+     * This function filters the relevant keys from the tag file configuration and saves all entries as a 'tagconfig.json' in the tag file directory.
+     * 
+     * @param Array &$tag_config Array with tag file configuration entries.
+     * @param Bool $restore_mtime Restore the file modification time so that the cache files are not invalidated. Defaults to false.
+     */
     public function saveTagFileConfig(&$tag_config,$restore_mtime = false) {
+        /** @var String[] $save_key_selection Configuration keys that are allowed in the stored configuration file. */
         $save_key_selection = ['remote_url','update_period','docu_url','enabled','last_update','force_runner','description'];
 
-        $selectedKeys = [];
+        /**
+         * @var String[] Copied tag file configuration entries.
+         * 
+         * We copy over the allowed configuration $key => $value pairs so the original configuration is not modified.
+         */
+        $selected_config = [];
 
         // create the tag file directory if not existent (might happen after installing the plugin)
         $this->createTagFileDir();
@@ -110,19 +124,20 @@ class helper_plugin_doxycode_tagmanager extends Plugin {
             // loop over all keys in configuration
             foreach($tag_conf as $key => $value) {
                 if(in_array($key,$save_key_selection)) {
-                    $selectedKeys[$name][$key] = $value;
+                    $selected_config[$name][$key] = $value;
                 }
             }
         }
 
-        // Convert the selected keys to JSON
-        $jsonData = json_encode($selectedKeys, JSON_PRETTY_PRINT);
+        // Convert the selected configuration to JSON
+        $jsonData = json_encode($selected_config, JSON_PRETTY_PRINT);
 
-
+        // save the mtime so we can restore it later
         $original_mtime = filemtime($config_filename);
 
         file_put_contents($config_filename, $jsonData);
 
+        // restore the mtime if we have an original mtime and restoring is enabled
         if ($original_mtime !== false && $restore_mtime) {
             touch($config_filename, $original_mtime);
         }
