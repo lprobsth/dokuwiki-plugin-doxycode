@@ -237,7 +237,8 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
 
                     // if the state is finished or non existent, we need to either schedule or build now
                     if($job_state == helper_plugin_doxycode_buildmanager::STATE_FINISHED ||
-                       $job_state == helper_plugin_doxycode_buildmanager::STATE_NON_EXISTENT) {
+                       $job_state == helper_plugin_doxycode_buildmanager::STATE_NON_EXISTENT ||
+                       $job_state == helper_plugin_doxycode_buildmanager::STATE_ERROR) {
                         if(!$conf['render_task'] || plugin_isdisabled('sqlite')) {
                             // either job handling is not available or this snippet should immediately be rendered
 

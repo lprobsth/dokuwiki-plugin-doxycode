@@ -10,6 +10,7 @@ jQuery(function(){
         STATE_RUNNING: 2,
         STATE_SCHEDULED: 3,
         STATE_FINISHED: 4,
+        STATE_ERROR: 5,
     };
 
     function scanAndPrepareData() {
@@ -52,6 +53,9 @@ jQuery(function(){
                         break;
                     case BuildmanagerStates.STATE_RUNNING:
                         message = LANG.plugins.doxycode.msg_running;
+                        break;
+                    case BuildmanagerStates.STATE_ERROR:
+                        message = LANG.plugins.doxycode.msg_error;
                         break;
                     case BuildmanagerStates.STATE_FINISHED:
                         loadSnippet({

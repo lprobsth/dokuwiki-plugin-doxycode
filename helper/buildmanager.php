@@ -45,6 +45,7 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
     const STATE_RUNNING = 2;
     const STATE_SCHEDULED = 3;
     const STATE_FINISHED = 4;
+    const STATE_ERROR = 5;
 
     /**
      * @var string Filename of the lock file for only allowing one doxygen process.
@@ -90,6 +91,7 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         $row = $this->db->queryRecord('SELECT * FROM Tasks WHERE TaskID = ?', [$config['taskID']]);
 
         switch($row['State']) {
+            case self::STATE_ERROR: // fall through
             case self::STATE_FINISHED: {
                 // this means that the build directory probably was already deleted
                 // we can just recreate the directory or put our job into the existing build directory
@@ -331,11 +333,16 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         [self::STATE_RUNNING, $taskID]);
 
         // execute doxygen and move cache files into position
-        $this->_runDoxygen($tmpDir,$tag_config);
+        $success = $this->_runDoxygen($tmpDir,$tag_config);
 
         // update the task state
-        $this->db->exec('UPDATE Tasks SET State = ? WHERE TaskID = ?',
-        [self::STATE_FINISHED, $taskID]);
+        if($success) {
+            $this->db->exec('UPDATE Tasks SET State = ? WHERE TaskID = ?',
+            [self::STATE_FINISHED, $taskID]);
+        } else {
+            $this->db->exec('UPDATE Tasks SET State = ? WHERE TaskID = ?',
+            [self::STATE_ERROR, $taskID]);
+        }
 
 
         // delete tmp_dir

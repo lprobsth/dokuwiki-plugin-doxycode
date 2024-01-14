@@ -3,6 +3,7 @@
 $lang['js']['msg_scheduled'] = 'The doxygen build has been scheduled. This state automatically updates!';
 $lang['js']['msg_running'] = 'The doxygen build is currently running. The snippet will automatically load after finishing!';
 $lang['js']['msg_not_existent'] = 'The doxygen build is not existent. Try to reload the page!';
+$lang['js']['msg_error'] = 'The doxygen build failed!';
 
 // text for the doxycode tag selector in the edit toolbar
 $lang['js']['tag_selector_title'] = 'Doxycode Tag Selector';
@@ -15,6 +16,7 @@ $lang['js']['tag_selector_btn_update'] = 'Update';
 $lang['msg_scheduled'] = 'The doxygen build has been scheduled. Please reload the page later!';
 $lang['msg_running'] = 'The doxygen build is currently running. Please reload the page later!';
 $lang['msg_not_existent'] = 'The doxygen build is not existent. Try to reload the page!';
+$lang['msg_error'] = 'The doxygen build failed!';
 
 $lang['error_language_missing'] = 'No language extension (e.g. language="c", "php", ...) was given!';
 $lang['error_cache_not_readable'] = 'DoxyCode: cached HTML was not readable!';
