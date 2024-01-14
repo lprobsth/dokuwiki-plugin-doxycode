@@ -114,12 +114,27 @@ class action_plugin_doxycode extends ActionPlugin {
 
         $tasks = $buildmanager->getBuildTasks();
 
+        // TODO: we should implement a mechanism that only allows one doxygen instance at all times
+        // we already have the locking mechanism
+        // but here we don't check if runTask fails because of another doxygen instance!
         if(sizeof($tasks) > 0) {
             $event->stopPropagation();
             $event->preventDefault();
 
+            $iterations = 0;
+            // TODO: we should implement a maximum amount of tasks to run in one task runner instance!
             foreach($tasks as $task) {
-                $buildmanager->runTask($task['TaskID']);
+                $iterations++;
+
+                if($iterations > $this->getConf('runner_max_tasks')) {
+                    return;
+                }
+
+                if(!$buildmanager->runTask($task['TaskID'])) {
+                    // if we couldn't build abort the task runner
+                    // this might happen if another instance is already running
+                    return;
+                }
             }
         }
     }
