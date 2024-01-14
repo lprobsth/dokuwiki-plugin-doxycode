@@ -241,7 +241,9 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
                     // -> each meta entry: unique settings comination for doxygen (tag files)
                     // -> run doxygen
                     // -> then check if rendered version is available? otherwise output information here
-                    $conf['render_task'] = $tagmanager->isForceRenderTaskSet($tag_conf);
+                    if(!$conf['render_task']) {
+                        $conf['render_task'] = $tagmanager->isForceRenderTaskSet($tag_conf);
+                    }
 
                     // if job handling through sqlite is not available, we get STATE_NON_EXISTENT
                     // if job handling is available the building of the XML might be already in progress
