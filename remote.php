@@ -62,8 +62,13 @@ class remote_plugin_doxycode extends RemotePlugin
         
         $tag_config = $tagmanager->loadTagFileConfig();
 
+        // filter out disabled items
+        $tag_config = $tagmanager->filterConfig($tag_config,['isConfigEnabled']);
+
+        // filter out remote configurations (we do not allow uploading them)
+        $tag_config = $tagmanager->filterConfig($tag_config,['isValidRemoteConfig'],true);
+
         // check file against existing configuration
-        // TODO: check only for configurations that are not remote!
         if(!in_array($tagname,array_keys($tag_config))) {
             return array(false);
         }
