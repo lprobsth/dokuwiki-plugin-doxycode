@@ -41,14 +41,17 @@ class action_plugin_doxycode extends ActionPlugin {
         /** @var helper_plugin_doxycode_tagmanager $tagmanager */
         $tagmanager = plugin_load('helper', 'doxycode_tagmanager');
 
-        $config = $tagmanager->loadTagFileConfig();
+        // load complete tag file configuration
+        // we need this since we'll save the configuration later
+        // if we use the filtered configuration for saving we would remove all other elements
+        $tag_config = $tagmanager->loadTagFileConfig();
+
+        // only try to download a tag file if it is a remote file and enabled!
+        // TODO: we could also use a filter function for filtering remote configurations with overdue updates
+        $filtered_config = $tagmanager->filterConfig($tag_config,['isConfigEnabled','isValidRemoteConfig']);
 
         // loop over all tag file configurations
-        foreach($config as $key => &$conf) {
-            if(!$tagmanager->isValidRemoteConfig($conf)) {
-                // only try to download a tag file if it is a remote file!
-                continue;
-            }
+        foreach($filtered_config as $key => &$conf) {
 
             $now = time();
             $timestamp = $conf['last_update'] ? $conf['last_update'] : 0;
@@ -61,12 +64,12 @@ class action_plugin_doxycode extends ActionPlugin {
                 $event->stopPropagation();
                 $event->preventDefault();
 
-                $conf['last_update'] = $now;
+                $tag_config[$key]['last_update'] = $now;
                 // save the new timestamp - regardless of the success of the rest
                 // on connection failures, we don't want to run the task runner constantly on failures!
                 // true: do not update the mtime of the configuration!
                 // if a new tag file is available we invalidate the cache if this tag file was used in a page!
-                $tagmanager->saveTagFileConfig($config,true);
+                $tagmanager->saveTagFileConfig($tag_config,true);
 
                 $exists = False;    // if the file does not exist - just write now!
                 $cachedHash = '';   // this is used to check if we really have a new file
@@ -347,9 +350,6 @@ class action_plugin_doxycode extends ActionPlugin {
 
             // load the tag file configuration
             $tag_config = $tagmanager->getFilteredTagConfig();
-
-            // filter only enabled configuration
-            $tagmanager->filterEnabledConfig($tag_config);
 
             header('Content-Type: application/json');
 

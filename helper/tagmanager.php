@@ -123,8 +123,8 @@ class helper_plugin_doxycode_tagmanager extends Plugin {
     public function getFilteredTagConfig($tag_names = null) {
         $tag_conf = $this->loadTagFileConfig();
 
-        // TODO: filter out tag files
-        $tag_conf = array_filter($tag_conf,array($this, 'isConfigEnabled'));
+        // filter out tag files
+        $tag_conf = $this->filterConfig($tag_conf,'isConfigEnabled');
 
 
         if($tag_names) {
@@ -138,18 +138,58 @@ class helper_plugin_doxycode_tagmanager extends Plugin {
         return $tag_conf;
     }
 
-    public function filterEnabledConfig(&$tag_conf) {
-        return array_filter($tag_conf,array($this, 'isConfigEnabled'));;
+    /**
+     * Filter a tag file configuration array for entries that are enabled.
+     * 
+     * @param Array &$tag_conf Array with tag file configuration entries.
+     * @return Array Array with enabled tag file configuration entries.
+     */
+    public function filterConfig($tag_config,$filter, $inverse = false) {
+        $filter = is_array($filter) ? $filter : [$filter];
+
+        foreach ($filter as $function) {
+            if ($inverse) {
+                // Apply the inverse filter
+                $tag_config = array_filter($tag_config, function($item) use ($function) {
+                    return !$this->$function($item);
+                });
+            } else {
+                // Apply the standard filter
+                $tag_config = array_filter($tag_config, array($this, $function));
+            }
+        }
+        return $tag_config;
     }
 
-    public function isConfigEnabled(&$tag_conf) {
-        return boolval($tag_conf['enabled']);
+    /**
+     * Check if a tag file configuration is enabled.
+     * 
+     * Tag file configurations can be disabled through the admin interface.
+     * The parameters of the tag file (remote config, ...) will still be saved.
+     * But the tag file can't be used.
+     * 
+     * This function is used in @see filterEnabledConfig to filter a tag file configuration array for
+     * entries that are enabled.
+     * 
+     * @param Array &$tag_config Tag file configuration entry
+     * @return bool Is this tag file configuration enabled?
+     */
+    public function isConfigEnabled(&$tag_config) {
+        return boolval($tag_config['enabled']);
     }
 
-    public function isValidRemoteConfig(&$conf) {
+    /**
+     * Check if a tag file configuration represents a remote tag File
+     * 
+     * @param Array &$tag_config Tag file configuration entry
+     * @return bool Is this a remote tag file configuration?
+     */
+    public function isValidRemoteConfig(&$tag_config) {
 
         // TODO: should we check if the URL contains a valid XML extension?
-        if(strlen($conf['remote_url']) > 0) {
+        // TODO: should we also check if a valid period was set?
+        // otherwise we could simply fall back to the default update period in the task runner action
+        if(strlen($tag_config['remote_url']) > 0) {
             return True;
         } else {
             return False;
