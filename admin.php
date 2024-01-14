@@ -82,6 +82,9 @@ class admin_plugin_doxycode extends AdminPlugin {
                 if ('xml' != pathinfo($_FILES['upload']['name'], PATHINFO_EXTENSION)){
                     msg(sprintf($this->getLang('admin_err_no_xml_file'),$_FILES['upload']['name']), 2);
                 }else {
+                    // if tag file directory does not exist, create it!
+                    $this->helper->createTagFileDir();
+
                     move_uploaded_file($_FILES['upload']['tmp_name'],
                         DOKU_PLUGIN.'doxycode/tagfiles/'.$_FILES['upload']['name']);
                     msg(sprintf($this->getLang('admin_info_upload_success'),$_FILES['upload']['name']), 1);

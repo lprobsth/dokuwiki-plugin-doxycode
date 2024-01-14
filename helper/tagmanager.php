@@ -81,14 +81,27 @@ class helper_plugin_doxycode_tagmanager extends Plugin {
         return $config;
     }
 
+    /**
+     * The function checks if a directory exists and creates it if it doesn't.
+     * 
+     * @return bool either the result of the `mkdir()` function if the directory does not exist and is
+     * successfully created, or `true` if the directory already exists.
+     */
+    public function createTagFileDir() {
+        if(!is_dir($this->tagfile_dir)) {
+            return mkdir($this->tagfile_dir);
+        } else {
+            return true;
+        }
+    }
+
     public function saveTagFileConfig(&$tag_config,$restore_mtime = false) {
         $save_key_selection = ['remote_url','update_period','docu_url','enabled','last_update','force_runner','description'];
 
         $selectedKeys = [];
 
-        if(!is_dir($this->tagfile_dir)) {
-            mkdir($this->tagfile_dir);
-        }
+        // create the tag file directory if not existent (might happen after installing the plugin)
+        $this->createTagFileDir();
 
         $config_filename = $this->tagfile_dir . 'tagconfig.json';
 
