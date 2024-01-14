@@ -181,7 +181,7 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
                 // load HTML from cache
 
                 // TODO: is it ok to reuse the same HTML file for multiple instances with the same settings?
-                // examplte problems: ACL? tag file settings per page?
+                // example problems: ACL? tag file settings per page?
 
                 // the cache name is the hash from options + code
                 $html_cacheID = md5(json_encode($buildmanager->filterDoxygenAttributes($conf,true)) . $text);  // cache identifier for this code snippet

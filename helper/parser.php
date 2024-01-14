@@ -153,7 +153,6 @@ class helper_plugin_doxycode_parser extends Plugin {
         $external = $node->getAttribute('external');
         $ref = $node->getAttribute('refid');
 
-
         /** @var helper_plugin_doxycode_tagmanager $tagmanager */
         $tagmanager = plugin_load('helper', 'doxycode_tagmanager');
 

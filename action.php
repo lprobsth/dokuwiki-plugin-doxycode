@@ -34,7 +34,22 @@ class action_plugin_doxycode extends ActionPlugin {
         $controller->register_hook('RPC_CALL_ADD','AFTER',$this,'add_rpc_all');
     }
     
-    
+    /**
+     * Download remote doxygen tag files and place the in the tag file directory.
+     * 
+     * Remote tag files are tag files that are publicly hosted on another website.
+     * This task runner hook gets the tag file configuration for remote tag files and checks
+     * if it is time to check the remote tag file again.
+     * 
+     * If the time threshold is reached for checking again it tries to download the tag file again,
+     * updates the 'last_update' timestamp in the configuration, and then checks if we have an updated
+     * tag file by comparing the md5 of the cached tag file.
+     * 
+     * The configuration with the updated 'last_update' timestamp is saved without modifying the mtime
+     * of the configuration because the configuration file is listed as a file dependency among the used tag files
+     * for the cached snippets. We only want to invalidate the cached snippets if the configuration really changes
+     * or a new tag file is available.
+     */
     public function loadRemoteTagFiles(Event $event, $param) {
         // get the tag files from the helper
 

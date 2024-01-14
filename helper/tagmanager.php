@@ -21,7 +21,9 @@ class helper_plugin_doxycode_tagmanager extends Plugin {
     }
 
     /**
-     * The function "listTagFiles" returns an array with file names (without extension) as keys and empty
+     * List tag files in the tag file directory.
+     * 
+     * Returns an array with file names (without extension) as keys and empty
      * arrays as values. This ensures compatibility with the tag file configuration from loadTagFileConfig().
      * The list of tag files can then be merged with the tag file configuration.
      * 
@@ -224,6 +226,17 @@ class helper_plugin_doxycode_tagmanager extends Plugin {
         }
     }
 
+    /**
+     * Check if a tag file configuration has the force runner flag enabled.
+     * 
+     * Some tag files are huge and cause long building times.
+     * We want to build the doxygen code snippet through the dokuwiki task runner in those cases.
+     * Otherwise the loading time of the page might exceed the maximum php execution time.
+     * This flag can be set through the admin interface.
+     * 
+     * @param Array &$tag_config Tag file configuration entry
+     * @return bool Is this the force runner flag enabled?
+     */
     public function isForceRenderTaskSet(&$tag_config) {
         $force_render = false;
         foreach($tag_config as $key => $tag_conf) {
