@@ -215,9 +215,23 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
                 $depends = [];
                 $helper->getXMLFileDependencies($depends,$tag_conf);
 
+                // this variable makes it easier to decide if we want to try to parse the XML output of doxygen at the end
+                //  - cache is valid
+                //      - assume STATE_FINISHED
+                //  - cache was invalidated (purge, dependencies)
+                //      - try directly build
+                //          - direct build successful
+                //          -> set STATE_FINISHED manually
+                //          - build was scheduled (doxygen already running)
+                //          -> $job_state reflects actual state
+                //      - schedule build
+                //      -> $job_state reflects actual state
+                $job_state = helper_plugin_doxycode_buildmanager::STATE_FINISHED;
+
                 if(!$xml_cache->useCache($depends)) {
                     // no valid XML cache available
 
+                    // the taskID is the md5 of only the doxygen configuration
                     $conf['taskID'] = md5(json_encode($buildmanager->filterDoxygenAttributes($conf)));
 
                     // if the "render_task" option is set:
@@ -278,15 +292,23 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
                                 $renderer->doc .= $this->getLang('msg_scheduled');
                                 break;
                             }
+                            case helper_plugin_doxycode_buildmanager::STATE_ERROR: {
+                                // task runner not available (missing sqlite?)
+                                $renderer->doc .= $this->getLang('msg_error');
+                                break;
+                            }
                         }
 
                         $renderer->doc .= '</div';
+                    } else {
+                        // if buildsuccess==true we want to parse the XML now
+                        $job_state = helper_plugin_doxycode_buildmanager::STATE_FINISHED;
                     }
                 }
 
                 // render task is only set if we previously determined with a missing XML cache file that
                 // the snippet should be built through job handling
-                if(!$conf['render_task'] || plugin_isdisabled('sqlite')) {
+                if($job_state == helper_plugin_doxycode_buildmanager::STATE_FINISHED) {
                     // here we ignore the default decision
                     // the XML should be available in this case
                     // otherwise purging leaves us with empty code snippets
