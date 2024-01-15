@@ -421,7 +421,7 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         $row = $this->db->queryRecord('SELECT * FROM Tasks WHERE TaskID = ?', $taskID);
 
         // we only want to run if we have a scheduled job!
-        if($row === null || $row['State'] === self::STATE_SCHEDULED) {
+        if($row === null || $row['State'] != self::STATE_SCHEDULED) {
             $this->_unlock();
             return false;
         }
