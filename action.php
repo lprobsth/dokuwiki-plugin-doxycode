@@ -127,11 +127,10 @@ class action_plugin_doxycode extends ActionPlugin {
         /** @var helper_plugin_doxycode_buildmanager $buildmanager */
         $buildmanager = plugin_load('helper', 'doxycode_buildmanager');
 
+        // TODO: instead of counting the executions in $iterations we could directly obtain
+        // a specific amount of tasks from getBuildTasks
         $tasks = $buildmanager->getBuildTasks();
 
-        // TODO: we should implement a mechanism that only allows one doxygen instance at all times
-        // we already have the locking mechanism
-        // but here we don't check if runTask fails because of another doxygen instance!
         if(sizeof($tasks) > 0) {
             $event->stopPropagation();
             $event->preventDefault();
