@@ -126,6 +126,13 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
         return $args;
     }
 
+    /**
+     * Prepare the content of the code snippet.
+     * 
+     * Currently this only removes newlines at the start and end.
+     * 
+     * @param String &$text The code snippet content
+     */
     private function _prepareText(&$text) {
 
         if($text[0] == "\n") {
