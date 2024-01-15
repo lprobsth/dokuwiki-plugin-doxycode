@@ -371,7 +371,7 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         $lock = $conf['lockdir'] . self::LOCKFILENAME;
 
         if (file_exists($lock)) {
-            if(time() - @filemtime($lock) > $this->getConf('')) {
+            if(time() - @filemtime($lock) > $this->getConf('runner_max_execution_time')) {
                 // looks like a stale lock - remove it
                 unlink($lock);
             } else {
