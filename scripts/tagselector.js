@@ -5,13 +5,15 @@
  * This code is used in the toolbar entry of the doxycode plugin for quickly selecting available
  * tag files from the tag file configuration for a code snippet.
  * 
- * It opens a floating jQuery dialog that is inspired from the linkwiz floating dialog.
+ * It opens a floating jQuery dialog that is inspired from the linkwiz floating dialog by Andreas Gohr and Pierre Spring
+ * (see {@link https://github.com/dokuwiki/dokuwiki/blob/master/lib/scripts/linkwiz.js}).
  * The user can filter all available tag file entries with a search string and select all
  * tag files to be used via checkboxes for each entry.
  * 
  * On load the tagselector tries to find a doxygen syntax near the cursor in the editor and loads
  * the already used tag file names into the dialog. Tag files can quickly be added by clicking on
  * a tag file entry.
+ * 
  *
  * @author      Lukas Probsthain <lukas.probsthain@gmail.com>
  */

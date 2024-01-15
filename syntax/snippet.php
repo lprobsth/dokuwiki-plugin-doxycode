@@ -2,7 +2,8 @@
 /**
  * DokuWiki Plugin doxycode (Snippet Syntax Component)
  *
- * @license GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
+ * @license     GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
+ * @author      Lukas Probsthain <lukas.probsthain@gmail.com>
  */
 
 // must be run within Dokuwiki
