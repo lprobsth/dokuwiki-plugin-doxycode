@@ -141,13 +141,12 @@ jQuery(function(){
 /**
  * Add button action for the doxycode tag selector button
  * 
- * Adapted from the linkwiz dialog
+ * Adapted from the linkwiz dialog by Andreas Gohr (see {@link https://github.com/dokuwiki/dokuwiki/blob/8985cadc85d51290e4908456c2afc923fd0f0332/lib/scripts/toolbar.js#L221-L230}).
  *
  * @param  DOMElement btn   Button element to add the action to
  * @param  array      props Associative array of button properties
  * @param  string     edid  ID of the editor textarea
  * @return boolean    If button should be appended
- * @author Andreas Gohr <gohr@cosmocode.de>
  * @author Lukas Probsthain <lukas.probsthain@gmail.com>
  */
 function addBtnActionDoxycodeTagSelector($btn, props, edid) {
