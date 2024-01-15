@@ -145,11 +145,22 @@ class helper_plugin_doxycode_tagmanager extends Plugin {
         }
     }
 
+    /**
+     * Convert the internal tag file name to a full file path with extension.
+     * 
+     * @param String $tag_name Internal tag file name
+     * @return String Full file path with extension for this tag file
+     */
     public function getFileName($tag_name) {
         return $this->tagfile_dir . $tag_name . '.xml';
     }
 
-
+    /**
+     * Load the configuration of tag files and optionally filter them by names.
+     * 
+     * @param String|Array $tag_names Internal tag file names (without extension) for filtering the configuration
+     * @return Array Filtered tag file configuration
+     */
     public function getFilteredTagConfig($tag_names = null) {
         $tag_conf = $this->loadTagFileConfig();
 

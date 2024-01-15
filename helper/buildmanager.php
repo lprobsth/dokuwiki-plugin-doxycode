@@ -87,6 +87,22 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         }
     }
 
+    /**
+     * Add a build job to the task runner builder and create or update a build task if necessary.
+     * 
+     * This function adds a new build job to the Jobs table in sqlite.
+     * Each build job corresponds to a build task. If no build task exists for the build job it will create a new one
+     * and insert it to the Tasks table in sqlite.
+     * 
+     * If the build task for this build job is existing it will try to change its state to 'STATE_SCHEDULED' to run it again.
+     * If the build task is already running, we don't want to interfere the doxygen build process. In that case
+     * we create a new build task for this build job with a random taskID.
+     * 
+     * @param String $jobID Identifier for this build job
+     * @param Array &$config Arguments from the snippet syntax containing the configuration for the snippet
+     * @param String $content Code snippet content
+     * @return Bool If adding the build job was successful
+     */
     public function addBuildJob($jobID,&$config,$content) {
         if($this->db === null) {
             return false;
@@ -144,6 +160,18 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         return true;
     }
 
+    /**
+     * Try to immediately build a code snippet.
+     * 
+     * If a lock for the doxygen process is present doxygen is already running.
+     * In that case we try to add the build job to the build queue (if sqlite is available).
+     * 
+     * @param String $jobID Identifier for this build job
+     * @param Array &$config Arguments from the snippet syntax containing the configuration for the snippet
+     * @param String $content Code snippet content
+     * @param Array $tag_conf Tag file configuration used for passing the tag files to doxygen
+     * @return Bool If build or adding it to the build queue as a build job was successful
+     */
     public function tryBuildNow($jobID,&$config,$content,$tag_conf) {
         global $conf;
 
@@ -184,6 +212,14 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         return true;
     }
 
+    /**
+     * Get the state of a build task from the Tasks table in sqlite.
+     * 
+     * If no entry for this task could be found in sqlite we return STATE_NON_EXISTENT.
+     * 
+     * @param String $id TaskID of the build task
+     * @return Num Task State
+     */
     public function getTaskState($id) {
         if($this->db === null) {
             // TODO: better return value?
@@ -199,6 +235,15 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         }
     }
 
+    /**
+     * Get the state of a build job.
+     * 
+     * Here we first lookup the corresponding build task for the build job and then lookup
+     * the task state with getTaskState.
+     * 
+     * @param String $jobID JobID for this build job
+     * @return Num Job State
+     */
     public function getJobState($jobID) {
         if($this->db === null) {
             // TODO: better return value?
@@ -217,6 +262,17 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         }
     }
 
+    /**
+     * Return the doxygen relevant build task configuration of a build task.
+     * 
+     * This is useful in a context where the configuration can not be obtained from the snippet syntax.
+     * 
+     * An example for this is the 'plugin_doxycode_get_snippet_html' ajax call where the doxygen output XML is parsed.
+     * There we need the configuration for matching the used tag files.
+     * 
+     * @param String $taskID TaskID for this build task
+     * @return Array Task configuration including the used tag files
+     */
     public function getTaskConf($taskID) {
         if($this->db === null) {
             // TODO: better return value?
@@ -232,6 +288,17 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         }
     }
 
+    /**
+     * Return the doxygen relevant build task configuration configuration of a build job.
+     * 
+     * This is useful in a context where the configuration can not be obtained from the snippet syntax.
+     * 
+     * We first obtain the corresponding TaskID from the Jobs table in sqlite.
+     * We then call getTaskConf to get the task configuration.
+     * 
+     * @param String $jobID JobID for this Job
+     * @return Array Task configuration including the used tag files
+     */
     public function getJobTaskConf($jobID) {
         if($this->db === null) {
             // TODO: better return value?
@@ -249,6 +316,14 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         }
     }
 
+    /**
+     * Get the HTML relevant configuration of a build job.
+     * 
+     * This is useful in a context where the configuration can not be obtained from the snippet syntax.
+     * 
+     * @param String $jobID JobID for this Job
+     * @return Array Task configuration including linenumbers, filename, etc.
+     */
     public function getJobConf($jobID) {
         if($this->db === null) {
             // TODO: better return value?
@@ -265,6 +340,11 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         }
     }
 
+    /**
+     * Check if a lock for the doxygen process is present.
+     * 
+     * @return Bool Is a lock present?
+     */
     private function _isRunning() {
         global $conf;
 
@@ -273,6 +353,18 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         return file_exists($lock);
     }
 
+    /**
+     * Create a lock for the doxygen process.
+     * 
+     * This is used for ensuring that only one doxygen process can be present at all times.
+     * 
+     * If a lock is present we check if the lock file is older than the maximum allowed execution time
+     * of the doxygen task runner. We then assume that the lock is stale and remove it.
+     * 
+     * If a lock is present and not stale locking fails.
+     * 
+     * @return Bool Was locking successful?
+     */
     private function _lock() {
         global $conf;
 
@@ -293,12 +385,30 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         return true;
     }
 
+    /**
+     * Remove the doxygen process lock file.
+     * 
+     * @return Bool Was removing the lock successful?
+     */
     private function _unlock() {
         global $conf;
         $lock = $conf['lockdir'] . self::LOCKFILENAME;
         return unlink($lock);
     }
 
+    /**
+     * Execute a doxygen task runner build task.
+     * 
+     * We obtain the build task from the Tasks table in sqlite.
+     * The build task row includes used tag files from the snippet syntax.
+     * 
+     * We then load the tag file configuration for those tag files and try to execute the build.
+     * 
+     * After the doxygen process exited we update the build task state in sqlite.
+     * 
+     * @param String $taskID TaskID for this build task
+     * @return Bool Was building successful?
+     */
     public function runTask($taskID) {
         global $conf;
 
@@ -362,7 +472,21 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         return true;
     }
 
-
+    /**
+     * Execute doxygen in a shell.
+     * 
+     * The doxygen configuration is passed to doxygen via a pipe and the TAGFILES parameter
+     * is overridden with the tag file configuration passed to this function.
+     * 
+     * In the xml output directory all matching XML output files are extracted and placed
+     * where the other plugin components expect the XML cache file. This is done by extracting the XML
+     * cache ID from the doxygen XML output filename (the source files in the doxygen directory where named
+     * after the cache ID).
+     * 
+     * @param String $build_dir Directory where doxygen should be executed.
+     * @param Array $tag_conf Tag file configuration
+     * @return Bool Was the execution successful?
+     */
     private function _runDoxygen($build_dir, $tag_conf = null) {
         if(!is_dir($build_dir)) {
             // the directory does not exist
@@ -457,6 +581,11 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         return $tempDir;
     }
 
+    /**
+     * Delete the temporary build task directory.
+     * 
+     * @param String $dirPath Build directory where doxygen is executed.
+     */
     private function _deleteTaskDir($dirPath) {
         if (! is_dir($dirPath)) {
             throw new InvalidArgumentException("$dirPath must be a directory");
@@ -465,7 +594,22 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         io_rmdir($dirPath,true);
     }
 
-
+    /**
+     * Create the source file in the build directory of the build task.
+     * 
+     * The $config variable includes the corresponding TaskID.
+     * First we try to create the temporary build directory.
+     * 
+     * We than place the content of the code snippet in a source file in the build directory.
+     * 
+     * The extension of the source file is the 'language' variable in $config.
+     * The filename of the source file is the cache ID (=JobID) of the XML cache file.
+     * This can later be used to place the doxygen output XML at the appropriate XML cache file name.
+     * 
+     * @param String $jobID JobID for this build job
+     * @param Array &$config Configuration from the snippet syntax
+     * @param String $content Content from the code snippet
+     */
     private function _createJobFile($jobID,&$config,$content) {
         // if we do not already have a job directory, create it
         $tmpDir = $this->_createTaskDir($config['taskID']);
@@ -487,6 +631,12 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
         return $tmpDir;
     }
 
+    /**
+     * Get a list of scheduled build tasks from the Tasks table in sqlite.
+     * 
+     * @param Num $amount Amount of build tasks to return.
+     * @return Array Build tasks
+     */
     public function getBuildTasks($amount = PHP_INT_MAX) {
         // get build tasks from SQLite
         // the order should be the same for all functions
@@ -503,7 +653,21 @@ class helper_plugin_doxycode_buildmanager extends Plugin {
     }
 
 
-
+    /**
+     * Filter the doxygen relevant attributes from a configuration array.
+     * 
+     * The doxygen relevant attributes are parameters that are passed to doxygen when building.
+     * Examples: tag file configuration
+     * 
+     * The configuration also includes attributes that only influence task scheduling (e.g. 'render_task' which forces
+     * task runner build from the syntax). Here we filter those values out.
+     * 
+     * This function is especially useful for generating the cache file IDs.
+     * 
+     * @param Array $config Configuration from the snippet syntax.
+     * @param bool $exclude Return only doxygen relevant configuration or everying else
+     * @return Array filtered configuration
+     */
     public function filterDoxygenAttributes($config, $exclude = false) {
         $filtered_config = [];
 
