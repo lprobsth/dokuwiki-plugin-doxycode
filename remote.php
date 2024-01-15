@@ -1,10 +1,22 @@
 <?php
+/**
+ * DokuWiki Plugin doxycode (Remote Component)
+ * 
+ * @license     GPL 2 (http://www.gnu.org/licenses/gpl.html)
+ * @author      Lukas Probsthain <lukas.probsthain@gmail.com>
+ */
 
 use dokuwiki\Extension\RemotePlugin;
 use dokuwiki\Remote\AccessDeniedException;
 
 /**
- * Class remote_plugin_acl
+ * Class remote_plugin_doxycode
+ * 
+ * This remote component implements the following methods for the dokuwiki remote API:
+ * - receive the current tag file configuration of doxycode
+ * - upload a doxygen tag file (e.g. from a CI/CD pipeline)
+ * 
+ * @author      Lukas Probsthain <lukas.probsthain@gmail.com>
  */
 class remote_plugin_doxycode extends RemotePlugin
 {
@@ -19,22 +31,21 @@ class remote_plugin_doxycode extends RemotePlugin
         return array(
             'listTagFiles' => array(
                 'args' => array(),
-                'return' => 'Array of Tag Files',
-                'doc' => 'Get the list of all ACLs',
+                'return' => 'Array of Tag File Configurations',
+                'doc' => 'Get the current tag file configuration of doxycode.',
             ),'uploadTagFile' => array(
-                'args' => array('string', 'file', 'array'),
-                'return' => 'int',
+                'args' => array('string', 'string'),
+                'return' => 'bool',
                 'name' => 'uploadTagFile',
-                'doc' => 'Adds a new ACL rule.'
+                'doc' => 'Upload a tag file to the tag file directory.'
             ),
         );
     }
 
     /**
-     * List all Tag File Configurations for Doxygen
+     * List all Tag File Configurations for Doxycode
      *
-     * @throws AccessDeniedException
-     * @return dictionary {Scope: ACL}, where ACL = dictionnary {user/group: permissions_int}
+     * @return Array Doxyoce tag file configuration
      */
     public function listTagFiles()
     {
@@ -47,11 +58,14 @@ class remote_plugin_doxycode extends RemotePlugin
     }
 
     /**
-     * Add a new entry to ACL config
+     * Upload a Doxycode Tag File
+     * 
+     * The tag file will only be accepted if a configuration exists for it and if it is enabled.
+     * Uploads for remote tag files will not be accepted
      *
-     * @param string $file
-     * @throws AccessDeniedException
-     * @return bool
+     * @param string $filename The filename of the doxygen tag file
+     * @param string $file Contents of the doxygen tag file
+     * @return bool If the upload was succesful
      */
     public function uploadTagFile($filename,$file)
     {
