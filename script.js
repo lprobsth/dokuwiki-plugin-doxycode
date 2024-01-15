@@ -159,10 +159,4 @@ function addBtnActionDoxycodeTagSelector($btn, props, edid) {
         return '';
     });
     return 'doxycode__tagselector';
-
-
-
-
-
-
 }
