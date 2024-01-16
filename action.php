@@ -34,21 +34,39 @@ class action_plugin_doxycode extends ActionPlugin {
         $controller->register_hook('RPC_CALL_ADD','AFTER',$this,'add_rpc_all');
     }
     
-    
+    /**
+     * Download remote doxygen tag files and place the in the tag file directory.
+     * 
+     * Remote tag files are tag files that are publicly hosted on another website.
+     * This task runner hook gets the tag file configuration for remote tag files and checks
+     * if it is time to check the remote tag file again.
+     * 
+     * If the time threshold is reached for checking again it tries to download the tag file again,
+     * updates the 'last_update' timestamp in the configuration, and then checks if we have an updated
+     * tag file by comparing the md5 of the cached tag file.
+     * 
+     * The configuration with the updated 'last_update' timestamp is saved without modifying the mtime
+     * of the configuration because the configuration file is listed as a file dependency among the used tag files
+     * for the cached snippets. We only want to invalidate the cached snippets if the configuration really changes
+     * or a new tag file is available.
+     */
     public function loadRemoteTagFiles(Event $event, $param) {
         // get the tag files from the helper
 
         /** @var helper_plugin_doxycode_tagmanager $tagmanager */
         $tagmanager = plugin_load('helper', 'doxycode_tagmanager');
 
-        $config = $tagmanager->loadTagFileConfig();
+        // load complete tag file configuration
+        // we need this since we'll save the configuration later
+        // if we use the filtered configuration for saving we would remove all other elements
+        $tag_config = $tagmanager->loadTagFileConfig();
+
+        // only try to download a tag file if it is a remote file and enabled!
+        // TODO: we could also use a filter function for filtering remote configurations with overdue updates
+        $filtered_config = $tagmanager->filterConfig($tag_config,['isConfigEnabled','isValidRemoteConfig']);
 
         // loop over all tag file configurations
-        foreach($config as $key => &$conf) {
-            if(!$tagmanager->isValidRemoteConfig($conf)) {
-                // only try to download a tag file if it is a remote file!
-                continue;
-            }
+        foreach($filtered_config as $key => &$conf) {
 
             $now = time();
             $timestamp = $conf['last_update'] ? $conf['last_update'] : 0;
@@ -61,12 +79,12 @@ class action_plugin_doxycode extends ActionPlugin {
                 $event->stopPropagation();
                 $event->preventDefault();
 
-                $conf['last_update'] = $now;
+                $tag_config[$key]['last_update'] = $now;
                 // save the new timestamp - regardless of the success of the rest
                 // on connection failures, we don't want to run the task runner constantly on failures!
                 // true: do not update the mtime of the configuration!
                 // if a new tag file is available we invalidate the cache if this tag file was used in a page!
-                $tagmanager->saveTagFileConfig($config,true);
+                $tagmanager->saveTagFileConfig($tag_config,true);
 
                 $exists = False;    // if the file does not exist - just write now!
                 $cachedHash = '';   // this is used to check if we really have a new file
@@ -109,14 +127,28 @@ class action_plugin_doxycode extends ActionPlugin {
         /** @var helper_plugin_doxycode_buildmanager $buildmanager */
         $buildmanager = plugin_load('helper', 'doxycode_buildmanager');
 
+        // TODO: instead of counting the executions in $iterations we could directly obtain
+        // a specific amount of tasks from getBuildTasks
         $tasks = $buildmanager->getBuildTasks();
 
         if(sizeof($tasks) > 0) {
             $event->stopPropagation();
             $event->preventDefault();
 
+            $iterations = 0;
+            // TODO: we should implement a maximum amount of tasks to run in one task runner instance!
             foreach($tasks as $task) {
-                $buildmanager->runTask($task['TaskID']);
+                $iterations++;
+
+                if($iterations > $this->getConf('runner_max_tasks')) {
+                    return;
+                }
+
+                if(!$buildmanager->runTask($task['TaskID'])) {
+                    // if we couldn't build abort the task runner
+                    // this might happen if another instance is already running
+                    return;
+                }
             }
         }
     }
@@ -347,9 +379,6 @@ class action_plugin_doxycode extends ActionPlugin {
 
             // load the tag file configuration
             $tag_config = $tagmanager->getFilteredTagConfig();
-
-            // filter only enabled configuration
-            $tagmanager->filterEnabledConfig($tag_config);
 
             header('Content-Type: application/json');
 

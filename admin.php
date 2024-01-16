@@ -82,6 +82,9 @@ class admin_plugin_doxycode extends AdminPlugin {
                 if ('xml' != pathinfo($_FILES['upload']['name'], PATHINFO_EXTENSION)){
                     msg(sprintf($this->getLang('admin_err_no_xml_file'),$_FILES['upload']['name']), 2);
                 }else {
+                    // if tag file directory does not exist, create it!
+                    $this->helper->createTagFileDir();
+
                     move_uploaded_file($_FILES['upload']['tmp_name'],
                         DOKU_PLUGIN.'doxycode/tagfiles/'.$_FILES['upload']['name']);
                     msg(sprintf($this->getLang('admin_info_upload_success'),$_FILES['upload']['name']), 1);
@@ -116,6 +119,7 @@ class admin_plugin_doxycode extends AdminPlugin {
         }
 
         // check if settings are valid for the enabled state
+        // TODO: implement tagmanager functions for checking if a config can be enabled!
         if($cmd['save'] || $cmd['update']) {
             foreach($this->tag_config as $key => &$tag_conf) {
                 // if element is disable continue
@@ -156,6 +160,7 @@ class admin_plugin_doxycode extends AdminPlugin {
             foreach($this->tag_config as $key => $tag_conf) {
                 if(isset($tag_conf['new_name']) && $key !== $tag_conf['new_name']) {
                     // TODO: check if an entry with this newName already exists!
+                    // if it already exists we can't rename it -> show msg to user!
                     $newName = $tag_conf['new_name'];
                     unset($this->tag_config[$key]);
                     $this->tag_config[$newName] = $tag_conf;
@@ -164,6 +169,8 @@ class admin_plugin_doxycode extends AdminPlugin {
                     rename( $this->helper->getTagFileDir() . $key . 'xml', $this->helper->getTagFileDir() . $newName . '.xml');
 
                     // TODO: rename tag in page!
+                    // I looked into the move plugin
+                    // it might be possible to handle renaming if the move plugin supports custom types (currently only media and pages)
 
                     // TODO: notify user through msg that the tag file was renamed!
                 }
@@ -239,12 +246,12 @@ class admin_plugin_doxycode extends AdminPlugin {
             if($tag_conf['force_runner']) $checkbox->attrs(['checked' => 'checked']);
             $form->addTagClose('td');
 
-            // TODO: add red highlight if this file does not exist
             $form->addTagOpen('td');
             $new_name = $form->addTextInput('tag_config[' . $key . '][new_name]')
                 ->attrs(['size' => $this->conf_column_widths['local_name']])
                 ->useInput(false);
 
+            // add red highlight if this file does not exist
             if(file_exists($this->helper->getFileName($key))) {
                 $new_name->attrs(['style' => 'background-color: LightGreen']);
             } else {

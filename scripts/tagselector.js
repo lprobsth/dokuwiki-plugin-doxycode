@@ -5,13 +5,15 @@
  * This code is used in the toolbar entry of the doxycode plugin for quickly selecting available
  * tag files from the tag file configuration for a code snippet.
  * 
- * It opens a floating jQuery dialog that is inspired from the linkwiz floating dialog.
+ * It opens a floating jQuery dialog that is inspired from the linkwiz floating dialog by Andreas Gohr and Pierre Spring
+ * (see {@link https://github.com/dokuwiki/dokuwiki/blob/master/lib/scripts/linkwiz.js}).
  * The user can filter all available tag file entries with a search string and select all
  * tag files to be used via checkboxes for each entry.
  * 
  * On load the tagselector tries to find a doxygen syntax near the cursor in the editor and loads
  * the already used tag file names into the dialog. Tag files can quickly be added by clicking on
  * a tag file entry.
+ * 
  *
  * @author      Lukas Probsthain <lukas.probsthain@gmail.com>
  */
@@ -590,7 +592,7 @@ var doxycode_tagselector = {
 
             // Update the selection to cover the entire <doxycode> tag
             doxycode_tagselector.doxycodeSelected.start = selectionStartLine + match.index;
-            doxycode_tagselector.doxycodeSelected.end = selectionStartLine + match[0].length;
+            doxycode_tagselector.doxycodeSelected.end = selectionStartLine + match.index + match[0].length;
             return;
         }
 
@@ -602,26 +604,25 @@ var doxycode_tagselector = {
 
         // Regex to match the opening and closing of doxycode blocks, and self-closing tag
         var openingTagRegex = /<doxycode(.*?)>/g;
-        var closingTagRegex = /<\/doxycode>/g;
-        var selfClosingTagRegex = /<doxycode.*?\/>/g;
+        var closingTagRegex = /<\/doxycode>|<doxycode.*?\/>/g;
 
         // Find the last opening tag and first closing tag before the cursor
         var lastOpeningTagIndex = -1, firstClosingTagIndex = -1;
+        var lastOpeningTagIndexLength = -1;
         var match;
-
-        // Check for self-closing tags
-        while ((match = selfClosingTagRegex.exec(textBeforeCursor)) !== null) {
-            if (match.index > lastOpeningTagIndex) {
-                // Found a self-closing tag, ignore it
-                lastOpeningTagIndex = -1;
-            }
-        }
 
         // Find the nearest opening tag before the cursor
         while ((match = openingTagRegex.exec(textBeforeCursor)) !== null) {
-            // Ignore if it is a self-closing tag
-            if (!selfClosingTagRegex.test(match[0])) {
-                lastOpeningTagIndex = match.index;
+            lastOpeningTagIndex = match.index;
+            lastOpeningTagIndexLength = match[0].length;
+        }
+
+        // Check for closing tags before the cursor
+        while ((match = closingTagRegex.exec(textBeforeCursor)) !== null) {
+            if (match.index >= lastOpeningTagIndex) {
+                // Found a closing tag after or at the last opening tag
+                // ignore opening tag
+                lastOpeningTagIndex = -1;
             }
         }
 
@@ -638,16 +639,13 @@ var doxycode_tagselector = {
         // Determine if the cursor is inside an open doxycode block
         if (lastOpeningTagIndex !== -1 && (firstClosingTagIndex === -1 || firstClosingTagIndex > doxycode_tagselector.selection.start)) {
             // Cursor is inside an open doxycode block
-
-            var selectionStartLine = text.substring(0, lastOpeningTagIndex).lastIndexOf('\n') + 1;
-            var selectionEndLine = text.indexOf('\n', lastOpeningTagIndex);
             
             // copy over the object from the original selection
             doxycode_tagselector.doxycodeSelected.obj = doxycode_tagselector.selection.obj;
 
             // Update the selection to cover the entire <doxycode> tag
-            doxycode_tagselector.doxycodeSelected.start = selectionStartLine;
-            doxycode_tagselector.doxycodeSelected.end = selectionEndLine;
+            doxycode_tagselector.doxycodeSelected.start = lastOpeningTagIndex;
+            doxycode_tagselector.doxycodeSelected.end = lastOpeningTagIndex + lastOpeningTagIndexLength;
             return;
         }
 

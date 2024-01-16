@@ -2,7 +2,8 @@
 /**
  * DokuWiki Plugin doxycode (Snippet Syntax Component)
  *
- * @license GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
+ * @license     GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
+ * @author      Lukas Probsthain <lukas.probsthain@gmail.com>
  */
 
 // must be run within Dokuwiki
@@ -126,6 +127,13 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
         return $args;
     }
 
+    /**
+     * Prepare the content of the code snippet.
+     * 
+     * Currently this only removes newlines at the start and end.
+     * 
+     * @param String &$text The code snippet content
+     */
     private function _prepareText(&$text) {
 
         if($text[0] == "\n") {
@@ -181,7 +189,7 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
                 // load HTML from cache
 
                 // TODO: is it ok to reuse the same HTML file for multiple instances with the same settings?
-                // examplte problems: ACL? tag file settings per page?
+                // example problems: ACL? tag file settings per page?
 
                 // the cache name is the hash from options + code
                 $html_cacheID = md5(json_encode($buildmanager->filterDoxygenAttributes($conf,true)) . $text);  // cache identifier for this code snippet
@@ -215,9 +223,23 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
                 $depends = [];
                 $helper->getXMLFileDependencies($depends,$tag_conf);
 
+                // this variable makes it easier to decide if we want to try to parse the XML output of doxygen at the end
+                //  - cache is valid
+                //      - assume STATE_FINISHED
+                //  - cache was invalidated (purge, dependencies)
+                //      - try directly build
+                //          - direct build successful
+                //          -> set STATE_FINISHED manually
+                //          - build was scheduled (doxygen already running)
+                //          -> $job_state reflects actual state
+                //      - schedule build
+                //      -> $job_state reflects actual state
+                $job_state = helper_plugin_doxycode_buildmanager::STATE_FINISHED;
+
                 if(!$xml_cache->useCache($depends)) {
                     // no valid XML cache available
 
+                    // the taskID is the md5 of only the doxygen configuration
                     $conf['taskID'] = md5(json_encode($buildmanager->filterDoxygenAttributes($conf)));
 
                     // if the "render_task" option is set:
@@ -227,7 +249,9 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
                     // -> each meta entry: unique settings comination for doxygen (tag files)
                     // -> run doxygen
                     // -> then check if rendered version is available? otherwise output information here
-                    $conf['render_task'] = $tagmanager->isForceRenderTaskSet($tag_conf);
+                    if(!$conf['render_task']) {
+                        $conf['render_task'] = $tagmanager->isForceRenderTaskSet($tag_conf);
+                    }
 
                     // if job handling through sqlite is not available, we get STATE_NON_EXISTENT
                     // if job handling is available the building of the XML might be already in progress
@@ -237,7 +261,8 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
 
                     // if the state is finished or non existent, we need to either schedule or build now
                     if($job_state == helper_plugin_doxycode_buildmanager::STATE_FINISHED ||
-                       $job_state == helper_plugin_doxycode_buildmanager::STATE_NON_EXISTENT) {
+                       $job_state == helper_plugin_doxycode_buildmanager::STATE_NON_EXISTENT ||
+                       $job_state == helper_plugin_doxycode_buildmanager::STATE_ERROR) {
                         if(!$conf['render_task'] || plugin_isdisabled('sqlite')) {
                             // either job handling is not available or this snippet should immediately be rendered
 
@@ -277,15 +302,23 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
                                 $renderer->doc .= $this->getLang('msg_scheduled');
                                 break;
                             }
+                            case helper_plugin_doxycode_buildmanager::STATE_ERROR: {
+                                // task runner not available (missing sqlite?)
+                                $renderer->doc .= $this->getLang('msg_error');
+                                break;
+                            }
                         }
 
                         $renderer->doc .= '</div';
+                    } else {
+                        // if buildsuccess==true we want to parse the XML now
+                        $job_state = helper_plugin_doxycode_buildmanager::STATE_FINISHED;
                     }
                 }
 
                 // render task is only set if we previously determined with a missing XML cache file that
                 // the snippet should be built through job handling
-                if(!$conf['render_task'] || plugin_isdisabled('sqlite')) {
+                if($job_state == helper_plugin_doxycode_buildmanager::STATE_FINISHED) {
                     // here we ignore the default decision
                     // the XML should be available in this case
                     // otherwise purging leaves us with empty code snippets

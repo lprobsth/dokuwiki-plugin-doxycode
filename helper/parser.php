@@ -15,9 +15,12 @@ use \dokuwiki\Extension\Plugin;
 class helper_plugin_doxycode_parser extends Plugin {
 
 
-    /* The `mapping` variable is an associative array that maps certain highlight classes in the
-    XML file to their corresponding DokuWiki CSS classes. This mapping is used in the
-    `renderXMLToDokuWikiCode()` method to convert the XML code to DokuWiki syntax. */
+    /** 
+     * @var Array $mapping Associative array that maps certain highlight classes in the
+     * XML file to their corresponding DokuWiki CSS classes.
+     * 
+     * This mapping is used in the `renderXMLToDokuWikiCode()` method to convert the XML code to DokuWiki syntax. 
+     */
     private $mapping = array(
         'comment' => 'co1',
         'keywordtype' => 'kw0',
@@ -83,6 +86,20 @@ class helper_plugin_doxycode_parser extends Plugin {
         return $output;
     }
 
+    /**
+     * Parse the children of codeline elements of a doxygen XML output and their children.
+     * 
+     * Individual lines from a source file are converted to <codeline>...</codeline> elements by doxygen.
+     * Here we parse the children of codeline elements and convert them to HTML elements that correspond
+     * to the elements of a default dokuwiki code snippet.
+     * 
+     * Some of the elements also contain children (e.g. <highlight ...><ref ...>...</ref>...</highlight>).
+     * In those cases we recursivly call this function until no children are found.
+     * 
+     * @param DOMElement $element Child element from the doxygen XML we want to parse
+     * @param String &$output Reference to the output string we append the generated HTML to
+     * @param Array $tag_conf Tag configuration used for generating the reference URLS
+     */
     private function _parseDoxygenXMLElement($element,&$output,$tag_conf = null) {
         global $conf;
 
@@ -146,6 +163,24 @@ class helper_plugin_doxycode_parser extends Plugin {
 
     }
 
+    /**
+     * Convert the external reference from a doxygen XML to the documentation URL.
+     * 
+     * The <ref...> element in the doxygen XML output includes the following elements:
+     * - refid: page identifier + anchor to the element in the documentation
+     * - external: name of the tag file of the documentation this reference points to
+     * 
+     * The external attribute should match one of the tag file names we used when building the
+     * documentation. We can use this attribute to find the tag file configuration, which in turn
+     * includes the documentation base URL.
+     * 
+     * We then convert the refid to a doxygen documentation html file name and append the anchor if
+     * ther is one.
+     * 
+     * @param DOMElement &$node reference to the XML reference element
+     * @param Array $tag_conf Tag file configuration
+     * @return String URL to the doxygen documentation for this reference
+     */
     private function _convertRefToURL(&$node,$tag_conf = null) {
 
         $output = '';
@@ -153,10 +188,10 @@ class helper_plugin_doxycode_parser extends Plugin {
         $external = $node->getAttribute('external');
         $ref = $node->getAttribute('refid');
 
-
         /** @var helper_plugin_doxycode_tagmanager $tagmanager */
         $tagmanager = plugin_load('helper', 'doxycode_tagmanager');
 
+        // match the external attribute to the tag file and extract the documentation URL
         foreach($tag_conf as $key => $conf) {
             if($tagmanager->getTagFileDir() . $key . '.xml' === $external) {
                 $output .= $conf['docu_url'];
@@ -174,6 +209,7 @@ class helper_plugin_doxycode_parser extends Plugin {
             $lastUnderscorePos = strrpos($ref, '_');
 
             $first = substr($ref, 0, $lastUnderscorePos);
+            // we omit the underscore and the first character to get the anchor
             $last = substr($ref, $lastUnderscorePos + 2);
 
             $output .= $first;
