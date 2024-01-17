@@ -1,4 +1,5 @@
 <?php
+
 /*
  * configuration metadata
  *

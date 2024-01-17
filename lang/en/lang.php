@@ -1,4 +1,5 @@
 <?php
+
 // Message texts for the dynamically loaded code snippets according to the state of the build task
 $lang['js']['msg_scheduled'] = 'The doxygen build has been scheduled. This state automatically updates!';
 $lang['js']['msg_running'] = 'The doxygen build is currently running. The snippet will automatically load after finishing!';

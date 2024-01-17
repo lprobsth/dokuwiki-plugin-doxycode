@@ -1,4 +1,5 @@
 <?php
+
 /**
  * DokuWiki Plugin doxycode (Helper Component)
  *
@@ -6,49 +7,48 @@
  * @author      Lukas Probsthain <lukas.probsthain@gmail.com>
  */
 
-if(!defined('DOKU_INC')) die();
-if(!defined('DOKU_PLUGIN')) define('DOKU_PLUGIN', DOKU_INC.'lib/plugins/');
-
-use \dokuwiki\Extension\Plugin;
+use dokuwiki\Extension\Plugin;
 
 /**
  * Class helper_plugin_doxycode
- * 
+ *
  * This helper plugin implements some common functions for the doxygen plugin.
  * Its main use is the creation of the file dependencies of XML and HTML cache files
  * for cache validation in the other components.
- * 
+ *
  * @author      Lukas Probsthain <lukas.probsthain@gmail.com>
  */
-class helper_plugin_doxycode extends Plugin {
-
+class helper_plugin_doxycode extends Plugin
+{
     /** @var helper_plugin_doxycode_tagmanager $tagmanager */
     protected $tagmanager;
 
-    function __construct()
+    public function __construct()
     {
         $this->tagmanager = plugin_load('helper', 'doxycode_tagmanager');
     }
 
 
-    public function getXMLFileDependencies(&$dependencies,$tag_conf = null) {
+    public function getXMLFileDependencies(&$dependencies, $tag_conf = null)
+    {
 
-        $this->getTagFiles($dependencies,$tag_conf);
+        $this->getTagFiles($dependencies, $tag_conf);
 
         // add the configuration file
-        $this->_addDefaultDependencies($dependencies);
+        $this->addDefaultDependencies($dependencies);
 
         return $dependencies;
     }
 
-    public function getHTMLFileDependencies(&$dependencies,$xml_cacheID,$tag_conf = null) {
+    public function getHTMLFileDependencies(&$dependencies, $xml_cacheID, $tag_conf = null)
+    {
 
-        $this->getTagFiles($dependencies,$tag_conf);
+        $this->getTagFiles($dependencies, $tag_conf);
 
         // add the configuration file
-        $this->_addDefaultDependencies($dependencies);
+        $this->addDefaultDependencies($dependencies);
 
-        $xml_cache = getCacheName($xml_cacheID,'.xml');
+        $xml_cache = getCacheName($xml_cacheID, '.xml');
 
         // add the configuration file
         $dependencies['files'][] = DOKU_PLUGIN . $this->getPluginName() . '/helper/parser.php';
@@ -57,16 +57,18 @@ class helper_plugin_doxycode extends Plugin {
         return $dependencies;
     }
 
-    public function getTagFiles(&$dependencies,$tag_conf = null) {
+    public function getTagFiles(&$dependencies, $tag_conf = null)
+    {
         // generate the full filepaths for the $tag_conf entries
 
-        foreach($tag_conf as $key => $conf) {
+        foreach ($tag_conf as $key => $conf) {
             // TODO: should we check if the file exists?
             $dependencies['files'][] = $this->tagmanager->getTagFileDir() . $key . '.xml';
         }
     }
 
-    protected function _addDefaultDependencies(&$dependencies) {
+    protected function addDefaultDependencies(&$dependencies)
+    {
         $dependencies['files'][] = $this->tagmanager->getTagFileDir() . 'tagconfig.json';
         // add the doxygen configuration template
         $dependencies['files'][] = DOKU_PLUGIN . $this->getPluginName()  . '/doxygen.conf';
@@ -79,15 +81,25 @@ class helper_plugin_doxycode extends Plugin {
         $dependencies['files'][] = DOKU_PLUGIN . $this->getPluginName() . '/helper.php';
     }
 
-    public function getPHPFileDependencies(&$dependencies) {
+    public function getPHPFileDependencies(&$dependencies)
+    {
 
         $dependencies['files'][] = $this->tagmanager->getTagFileDir() . 'tagconfig.json';
         // add the doxygen configuration template
         $dependencies['files'][] = DOKU_PLUGIN . $this->getPluginName()  . '/doxygen.conf';
 
         // easy cache invalidation on code change
-        $dependencies['files'] = array_merge($dependencies['files'],glob( DOKU_PLUGIN . $this->getPluginName() . '/*.php'));
-        $dependencies['files'] = array_merge($dependencies['files'],glob( DOKU_PLUGIN . $this->getPluginName() . '/syntax/*.php'));
-        $dependencies['files'] = array_merge($dependencies['files'],glob( DOKU_PLUGIN . $this->getPluginName() . '/helper/*.php'));
+        $dependencies['files'] = array_merge(
+            $dependencies['files'],
+            glob(DOKU_PLUGIN . $this->getPluginName() . '/*.php')
+        );
+        $dependencies['files'] = array_merge(
+            $dependencies['files'],
+            glob(DOKU_PLUGIN . $this->getPluginName() . '/syntax/*.php')
+        );
+        $dependencies['files'] = array_merge(
+            $dependencies['files'],
+            glob(DOKU_PLUGIN . $this->getPluginName() . '/helper/*.php')
+        );
     }
 }

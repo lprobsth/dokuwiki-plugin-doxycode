@@ -1,4 +1,5 @@
 <?php
+
 /**
  * DokuWiki Plugin doxycode (Snippet Syntax Component)
  *
@@ -6,73 +7,73 @@
  * @author      Lukas Probsthain <lukas.probsthain@gmail.com>
  */
 
-// must be run within Dokuwiki
-if(!defined('DOKU_INC')) die();
-
 use dokuwiki\Extension\SyntaxPlugin;
-use dokuwiki\Cache\Cache; 
+use dokuwiki\Cache\Cache;
 
 /**
  * Class syntax_plugin_doxycode_snippet
- * 
+ *
  * This is the main syntax of the doxycode plugin.
  * It takes the code from a code snippet and renders it with doxygen for cross referencing.
- * 
+ *
  * The rendering is split into building of doxygen XML files with the helper_plugin_doxycode_buildmanager
  * helper and parsing of the XML files to HTML with the helper_plugin_doxycode_parser helper.
- * 
+ *
  * If the sqlite plugin is installed it builds the XML through task runner jobs/task if enabled by the user,
  * force enabled for a tag file or if a doxygen instance is already running.
- * 
+ *
  * Which tag files and which cache files are used in the page is stored in the meta data of the page. This
  * then used in the action_plugin_doxycode plugin for invalidating the cache.
- * 
+ *
  * If a snippet is build through the task runner a marker is placed in the code snippet for dynamically loading
  * the snippet and informing the user of the build progress through AJAX calls that are handled by the
  * action_plugin_doxycode plugin.
  */
-class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
-
+class syntax_plugin_doxycode_snippet extends SyntaxPlugin
+{
     private $doc;
 
-    function __construct() {
-    }
-
-    public function getType() {
+    public function getType()
+    {
         return 'substition';
     }
 
-    public function getSort() {
+    public function getSort()
+    {
         return 158;
     }
 
-    public function connectTo($mode) {
-        $this->Lexer->addEntryPattern('<doxycode.*?>(?=.*?</doxycode>)',$mode,'plugin_doxycode_snippet');
-        $this->Lexer->addSpecialPattern('<doxycode.*?/>',$mode,'plugin_doxycode_snippet');
+    public function connectTo($mode)
+    {
+        $this->Lexer->addEntryPattern('<doxycode.*?>(?=.*?</doxycode>)', $mode, 'plugin_doxycode_snippet');
+        $this->Lexer->addSpecialPattern('<doxycode.*?/>', $mode, 'plugin_doxycode_snippet');
     }
 
-    public function postConnect() {
-        $this->Lexer->addExitPattern('</doxycode>','plugin_doxycode_snippet');
+    public function postConnect()
+    {
+        $this->Lexer->addExitPattern('</doxycode>', 'plugin_doxycode_snippet');
     }
 
-    public function handle($match, $state, $pos, Doku_Handler $handler){
+    public function handle($match, $state, $pos, Doku_Handler $handler)
+    {
         static $args;
         switch ($state) {
-            case DOKU_LEXER_ENTER : 
-            case DOKU_LEXER_SPECIAL : 
+            case DOKU_LEXER_ENTER:
+            case DOKU_LEXER_SPECIAL:
                 // Parse the attributes and content here
-                $args = $this->_parseAttributes($match);
+                $args = $this->parseAttributes($match);
                 return [$state, $args];
-            case DOKU_LEXER_UNMATCHED : 
+            case DOKU_LEXER_UNMATCHED:
                 // Handle internal content if any
                 return [$state, ['conf' => $args, 'text' => $match]];
-            case DOKU_LEXER_EXIT :
+            case DOKU_LEXER_EXIT:
                 return [$state, $args];
         }
         return [];
     }
 
-    private function _parseAttributes($string) {
+    private function parseAttributes($string)
+    {
         // Use regular expressions to parse attributes
         // Return an associative array of attributes
 
@@ -117,7 +118,7 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
         // TODO: if VCS import is implemented later we need to implement this check here!
 
         // if we don't have filename, we need the language extension!
-        if(!isset($args['language']) && isset($args['filename'])) {
+        if (!isset($args['language']) && isset($args['filename'])) {
             $args['language'] = pathinfo($args['filename'], PATHINFO_EXTENSION);
         }
 
@@ -129,42 +130,43 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
 
     /**
      * Prepare the content of the code snippet.
-     * 
+     *
      * Currently this only removes newlines at the start and end.
-     * 
+     *
      * @param String &$text The code snippet content
      */
-    private function _prepareText(&$text) {
+    private function prepareText(&$text)
+    {
 
-        if($text[0] == "\n") {
+        if ($text[0] == "\n") {
             $text = substr($text, 1);
         }
-        if(substr($text, -1) == "\n") {
+        if (substr($text, -1) == "\n") {
             $text = substr($text, 0, -1);
         }
     }
 
-    public function render($mode, Doku_Renderer $renderer, $data) {
+    public function render($mode, Doku_Renderer $renderer, $data)
+    {
 
         list($state, $data) = $data;
         if ($mode === 'xhtml') {
-
             $this->doc = '';
 
             // DOKU_LEXER_ENTER and DOKU_LEXER_SPECIAL: output the start of the code block
-            if($state == DOKU_LEXER_SPECIAL || $state == DOKU_LEXER_ENTER) {
-                $this->_startCodeBlock("file",$data['filename']);
+            if ($state == DOKU_LEXER_SPECIAL || $state == DOKU_LEXER_ENTER) {
+                $this->startCodeBlock("file", $data['filename']);
             }
 
             // DOKU_LEXER_UNMATCHED: call renderer and output the content to the document
-            if($state == DOKU_LEXER_UNMATCHED) {
+            if ($state == DOKU_LEXER_UNMATCHED) {
                 $conf = $data['conf'];
                 $text = $data['text'];
 
                 // strip empty lines at start and end
-                $this->_prepareText($text);
+                $this->prepareText($text);
 
-                if(!isset($conf['language'])) {
+                if (!isset($conf['language'])) {
                     $renderer->doc .= $this->getLang('error_language_missing');
                     return;
                 }
@@ -192,21 +194,25 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
                 // example problems: ACL? tag file settings per page?
 
                 // the cache name is the hash from options + code
-                $html_cacheID = md5(json_encode($buildmanager->filterDoxygenAttributes($conf,true)) . $text);  // cache identifier for this code snippet
-                $xml_cacheID = md5(json_encode($buildmanager->filterDoxygenAttributes($conf,false)) . $text);  // cache identifier for this code snippet
+                $html_cacheID = md5(
+                    json_encode($buildmanager->filterDoxygenAttributes($conf, true)) . $text
+                );  // cache identifier for this code snippet
+                $xml_cacheID = md5(
+                    json_encode($buildmanager->filterDoxygenAttributes($conf, false)) . $text
+                );  // cache identifier for this code snippet
 
                 $html_cache = new Cache($html_cacheID, '.html');
                 $xml_cache = new Cache($xml_cacheID, '.xml');
 
                 // use the helper for loading the file dependencies (conf, tag_conf, tagfiles)
                 $depends = [];
-                $helper->getHTMLFileDependencies($depends,$xml_cacheID,$tag_conf);
+                $helper->getHTMLFileDependencies($depends, $xml_cacheID, $tag_conf);
 
                 // check if we have parsed HTML ready
-                if($html_cache->useCache($depends)) {
+                if ($html_cache->useCache($depends)) {
                     // we have a valid HTML!
 
-                    if($cachedContent = @file_get_contents($html_cache->cache)) {
+                    if ($cachedContent = @file_get_contents($html_cache->cache)) {
                         // append cached HTML to document
                         $renderer->doc .= $cachedContent;
                     } else {
@@ -221,9 +227,10 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
                 // we now try to use the cached XML
 
                 $depends = [];
-                $helper->getXMLFileDependencies($depends,$tag_conf);
+                $helper->getXMLFileDependencies($depends, $tag_conf);
 
-                // this variable makes it easier to decide if we want to try to parse the XML output of doxygen at the end
+                // this variable makes it easier to decide
+                // if we want to try to parse the XML output of doxygen at the end
                 //  - cache is valid
                 //      - assume STATE_FINISHED
                 //  - cache was invalidated (purge, dependencies)
@@ -236,7 +243,7 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
                 //      -> $job_state reflects actual state
                 $job_state = helper_plugin_doxycode_buildmanager::STATE_FINISHED;
 
-                if(!$xml_cache->useCache($depends)) {
+                if (!$xml_cache->useCache($depends)) {
                     // no valid XML cache available
 
                     // the taskID is the md5 of only the doxygen configuration
@@ -249,7 +256,7 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
                     // -> each meta entry: unique settings comination for doxygen (tag files)
                     // -> run doxygen
                     // -> then check if rendered version is available? otherwise output information here
-                    if(!$conf['render_task']) {
+                    if (!$conf['render_task']) {
                         $conf['render_task'] = $tagmanager->isForceRenderTaskSet($tag_conf);
                     }
 
@@ -260,31 +267,33 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
                     $buildsuccess = false;  // vary output depending on availability of job handling and doxygen builder
 
                     // if the state is finished or non existent, we need to either schedule or build now
-                    if($job_state == helper_plugin_doxycode_buildmanager::STATE_FINISHED ||
-                       $job_state == helper_plugin_doxycode_buildmanager::STATE_NON_EXISTENT ||
-                       $job_state == helper_plugin_doxycode_buildmanager::STATE_ERROR) {
-                        if(!$conf['render_task'] || plugin_isdisabled('sqlite')) {
+                    if (
+                        $job_state == helper_plugin_doxycode_buildmanager::STATE_FINISHED
+                        || $job_state == helper_plugin_doxycode_buildmanager::STATE_NON_EXISTENT
+                        || $job_state == helper_plugin_doxycode_buildmanager::STATE_ERROR
+                    ) {
+                        if (!$conf['render_task'] || plugin_isdisabled('sqlite')) {
                             // either job handling is not available or this snippet should immediately be rendered
 
                             // if lock is present: try to append as job!
-                            $buildsuccess = $buildmanager->tryBuildNow($xml_cacheID,$conf,$text,$tag_conf);
+                            $buildsuccess = $buildmanager->tryBuildNow($xml_cacheID, $conf, $text, $tag_conf);
                         } else {
                             // append as job
-                            $buildmanager->addBuildJob($xml_cacheID,$conf,$text,$tag_conf);
+                            $buildmanager->addBuildJob($xml_cacheID, $conf, $text, $tag_conf);
                         }
                     }
 
                     // if snippet could not be build immediately or run through job handling
-                    if(!$buildsuccess || $conf['render_task']) {
+                    if (!$buildsuccess || $conf['render_task']) {
                         // get job state again
                         $job_state = $buildmanager->getJobState($xml_cacheID);
 
                         // add marker for javascript dynamic loading of snippet
-                        $renderer->doc .= '<div class="doxycode_marker" data-doxycode-xml-hash="' . $xml_cacheID . 
+                        $renderer->doc .= '<div class="doxycode_marker" data-doxycode-xml-hash="' . $xml_cacheID .
                                             '" data-doxycode-html-hash="' . $html_cacheID . '">';
 
                         // check if we have a job for this snippet and what its state is
-                        switch($job_state) {
+                        switch ($job_state) {
                             case helper_plugin_doxycode_buildmanager::STATE_FINISHED: {
                                 // this should be a good sign - next try to load the file
                                 break;
@@ -318,19 +327,23 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
 
                 // render task is only set if we previously determined with a missing XML cache file that
                 // the snippet should be built through job handling
-                if($job_state == helper_plugin_doxycode_buildmanager::STATE_FINISHED) {
+                if ($job_state == helper_plugin_doxycode_buildmanager::STATE_FINISHED) {
                     // here we ignore the default decision
                     // the XML should be available in this case
                     // otherwise purging leaves us with empty code snippets
-                    if(file_exists($xml_cache->cache)) {
+                    if (file_exists($xml_cache->cache)) {
                         // we have a valid XML!
 
                         $xml_content = @file_get_contents($xml_cache->cache);
 
-                        $rendered_text = $parser->renderXMLToDokuWikiCode($xml_content,$conf['linenumbers'],$tag_conf);
-                        
+                        $rendered_text = $parser->renderXMLToDokuWikiCode(
+                            $xml_content,
+                            $conf['linenumbers'],
+                            $tag_conf
+                        );
+
                         // save content to cache
-                        @file_put_contents($html_cache->cache,$rendered_text);
+                        @file_put_contents($html_cache->cache, $rendered_text);
 
                         // append cached HTML to document
                         $renderer->doc .= $rendered_text;
@@ -341,14 +354,13 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
             }
 
             // DOKU_LEXER_EXIT: output the end of the code block
-            if($state == DOKU_LEXER_EXIT) {
-                $this->_endCodeBlock("file",$data['filename']);
+            if ($state == DOKU_LEXER_EXIT) {
+                $this->endCodeBlock("file", $data['filename']);
             }
 
             $renderer->doc .= $this->doc;
-
         } elseif ($mode === 'metadata') {
-            if($state == DOKU_LEXER_SPECIAL || $state == DOKU_LEXER_ENTER) {
+            if ($state == DOKU_LEXER_SPECIAL || $state == DOKU_LEXER_ENTER) {
                 /** @var helper_plugin_doxycode_tagmanager $tagmanager */
                 $tagmanager = plugin_load('helper', 'doxycode_tagmanager');
 
@@ -356,22 +368,22 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
 
                 // save used tag files in this page for cache invalidation if a newer tag file is available
                 // TODO: what happens if a tag file is already present in the meta data?
-                foreach($tag_conf as $key => $conf) {
+                foreach ($tag_conf as $key => $conf) {
                     $renderer->meta['doxycode']['tagfiles'][] = $key;
                 }
             }
 
-            if($state == DOKU_LEXER_UNMATCHED) {
+            if ($state == DOKU_LEXER_UNMATCHED) {
                 /** @var helper_plugin_doxycode_buildmanager $buildmanager */
                 $buildmanager = plugin_load('helper', 'doxycode_buildmanager');
                 $conf = $data['conf'];
                 $text = $data['text'];
 
                 // this is needed so the cacheID is the same as in the xhtml context
-                $this->_prepareText($text);
+                $this->prepareText($text);
 
-                $xml_cacheID = md5(json_encode($buildmanager->filterDoxygenAttributes($conf,false)) . $text);
-                $html_cacheID = md5(json_encode($buildmanager->filterDoxygenAttributes($conf,true)) . $text);
+                $xml_cacheID = md5(json_encode($buildmanager->filterDoxygenAttributes($conf, false)) . $text);
+                $html_cacheID = md5(json_encode($buildmanager->filterDoxygenAttributes($conf, true)) . $text);
 
                 // add cache files to render context so page cache is invalidated if a new XML or HTML is available
                 $renderer->meta['doxycode']['xml_cachefiles'][] = $xml_cacheID;
@@ -384,23 +396,24 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
         return true;
     }
 
-    private function _startCodeBlock($type,$filename = null) {
+    private function startCodeBlock($type, $filename = null)
+    {
         global $INPUT;
         global $ID;
         global $lang;
 
         $ext = '';
-        if($filename) {
+        if ($filename) {
             // add icon
             list($ext) = mimetype($filename, false);
             $class = preg_replace('/[^_\-a-z0-9]+/i', '_', $ext);
-            $class = 'mediafile mf_'.$class;
+            $class = 'mediafile mf_' . $class;
 
             $offset = 0;
             if ($INPUT->has('codeblockOffset')) {
                 $offset = $INPUT->str('codeblockOffset');
             }
-            $this->doc .= '<dl class="'.$type.'">'.DOKU_LF;
+            $this->doc .= '<dl class="' . $type . '">' . DOKU_LF;
             $this->doc .= '<dt><a href="' .
                 exportlink(
                     $ID,
@@ -408,23 +421,24 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin {
                     array('codeblock' => $offset + 0)
                 ) . '" title="' . $lang['download'] . '" class="' . $class . '">';
             $this->doc .= hsc($filename);
-            $this->doc .= '</a></dt>'.DOKU_LF.'<dd>';
+            $this->doc .= '</a></dt>' . DOKU_LF . '<dd>';
         }
 
         $class = 'code'; //we always need the code class to make the syntax highlighting apply
-        if($type != 'code') $class .= ' '.$type;
+        if ($type != 'code') $class .= ' ' . $type;
 
         $this->doc .= "<pre class=\"$class $ext\">";
     }
 
-    private function _endCodeBlock($type,$filename = null) {
+    private function endCodeBlock($type, $filename = null)
+    {
         $class = 'code'; //we always need the code class to make the syntax highlighting apply
-        if($type != 'code') $class .= ' '.$type;
+        if ($type != 'code') $class .= ' ' . $type;
 
         $this->doc .= '</pre>' . DOKU_LF;
 
-        if($filename) {
-            $this->doc .= '</dd></dl>'.DOKU_LF;
+        if ($filename) {
+            $this->doc .= ' </dd></dl>' . DOKU_LF;
         }
     }
 }
