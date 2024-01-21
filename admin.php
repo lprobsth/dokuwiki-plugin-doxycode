@@ -1,7 +1,8 @@
 <?php
+
 /**
  * DokuWiki Plugin doxycode (Admin Component)
- * 
+ *
  * @license     GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author      Lukas Probsthain <lukas.probsthain@gmail.com>
  */
@@ -11,24 +12,24 @@ use dokuwiki\Form\Form;
 
 /**
  * Class admin_plugin_doxycode
- * 
+ *
  * This admin plugin implements the management of tag files from differen doxygen
  * documentations for building cross referenced code snippets.
- * 
+ *
  * It lists all currently configured tag files and all tag files present in the file system
  * of the plugin. The user can add new tag file configurations via upload or by defining a new configuration.
- * 
+ *
  * The admin interface uses the helper_plugin_doxycode_tagmanager helper plugin for loading the current tag file
  * list. On save it also uses the helper for storing the configuration in a json file.
- * 
+ *
  * On save and update it also checks if a configuration is valid and can stay enabled.
- * 
+ *
  * If a new remote config was defined, the action component of this plugin tries to download the tag file.
- * 
+ *
  * @author      Lukas Probsthain <lukas.probsthain@gmail.com>
  */
-class admin_plugin_doxycode extends AdminPlugin {
- 
+class admin_plugin_doxycode extends AdminPlugin
+{
     /** @var helper_plugin_doxycode_tagmanager $helper */
     private $helper;
     private $tag_config;
@@ -42,7 +43,8 @@ class admin_plugin_doxycode extends AdminPlugin {
         'description' => 40
     );
 
-    function __construct() {
+    public function __construct()
+    {
         $this->helper = plugin_load('helper', 'doxycode_tagmanager');
 
         // load files
@@ -59,7 +61,8 @@ class admin_plugin_doxycode extends AdminPlugin {
     /**
      * handle user request
      */
-    public function handle() {
+    public function handle()
+    {
         global $INPUT;
         global $_FILES;
  
@@ -72,22 +75,24 @@ class admin_plugin_doxycode extends AdminPlugin {
 
         $new_tag_config = $INPUT->arr('tag_config');
 
-        // handle upload command	
+        // handle upload command
         // if a new file was added, we move the file to the tagfile directory
         // and add the file to the tagfile configuration for rendering
         // on the next load of the page the tag file will be loaded to configuration
         // from the tag file list from the directory
-        if($cmd['update'] && isset($_FILES['upload']) && $_FILES['upload']['error'] != UPLOAD_ERR_NO_FILE) {
-            if ($_FILES['upload']['error'] == 0){
-                if ('xml' != pathinfo($_FILES['upload']['name'], PATHINFO_EXTENSION)){
-                    msg(sprintf($this->getLang('admin_err_no_xml_file'),$_FILES['upload']['name']), 2);
-                }else {
+        if ($cmd['update'] && isset($_FILES['upload']) && $_FILES['upload']['error'] != UPLOAD_ERR_NO_FILE) {
+            if ($_FILES['upload']['error'] == 0) {
+                if ('xml' != pathinfo($_FILES['upload']['name'], PATHINFO_EXTENSION)) {
+                    msg(sprintf($this->getLang('admin_err_no_xml_file'), $_FILES['upload']['name']), 2);
+                } else {
                     // if tag file directory does not exist, create it!
                     $this->helper->createTagFileDir();
 
-                    move_uploaded_file($_FILES['upload']['tmp_name'],
-                        DOKU_PLUGIN.'doxycode/tagfiles/'.$_FILES['upload']['name']);
-                    msg(sprintf($this->getLang('admin_info_upload_success'),$_FILES['upload']['name']), 1);
+                    move_uploaded_file(
+                        $_FILES['upload']['tmp_name'],
+                        DOKU_PLUGIN . 'doxycode/tagfiles/' . $_FILES['upload']['name']
+                    );
+                    msg(sprintf($this->getLang('admin_info_upload_success'), $_FILES['upload']['name']), 1);
                     $this->tag_config[pathinfo($_FILES['upload']['name'], PATHINFO_FILENAME)] = [];
                 }
             } else {
@@ -96,9 +101,12 @@ class admin_plugin_doxycode extends AdminPlugin {
         }
 
         // add new element from form
-        if(isset($new_tag_config['new'])) {
+        if (isset($new_tag_config['new'])) {
             // do we have a valid new entry && is this entry name not already set?
-            if(strlen($new_tag_config['new']['new_name']) > 0 && !isset($this->tag_config[$new_tag_config['new']['new_name']])) {
+            if (
+                strlen($new_tag_config['new']['new_name']) > 0
+                && !isset($this->tag_config[$new_tag_config['new']['new_name']])
+            ) {
                 $newKey = $new_tag_config['new']['new_name'];
 
                 // unset the temporary new name that otherwise would mean a rename/move
@@ -106,32 +114,32 @@ class admin_plugin_doxycode extends AdminPlugin {
 
                 // add new tag_config element to global config
                 $this->tag_config[$newKey] = $new_tag_config['new'];
-                msg(sprintf($this->getLang('admin_info_new_tag_config'),$newKey), 1);
+                msg(sprintf($this->getLang('admin_info_new_tag_config'), $newKey), 1);
             }
             unset($new_tag_config['new']); // Remove the 'new' placeholder
         }
 
         // update our configuration from the input data
-        if($cmd['save'] || $cmd['update']) {
-            foreach($new_tag_config as $key => $tag_conf) {
+        if ($cmd['save'] || $cmd['update']) {
+            foreach ($new_tag_config as $key => $tag_conf) {
                 $this->tag_config[$key] = $tag_conf;
             }
         }
 
         // check if settings are valid for the enabled state
         // TODO: implement tagmanager functions for checking if a config can be enabled!
-        if($cmd['save'] || $cmd['update']) {
-            foreach($this->tag_config as $key => &$tag_conf) {
+        if ($cmd['save'] || $cmd['update']) {
+            foreach ($this->tag_config as $key => &$tag_conf) {
                 // if element is disable continue
-                if(!isset($tag_conf['enabled']) || !$tag_conf['enabled']) continue;
+                if (!isset($tag_conf['enabled']) || !$tag_conf['enabled']) continue;
 
                 // if docu_url is missing
-                if(strlen($tag_conf['docu_url']) <= 0) {
+                if (strlen($tag_conf['docu_url']) <= 0) {
                     $tag_conf['enabled'] = false;
                     continue;
                 }
 
-                if(strlen($tag_conf['remote_url']) > 0 && strlen($tag_conf['update_period']) <= 0) {
+                if (strlen($tag_conf['remote_url']) > 0 && strlen($tag_conf['update_period']) <= 0) {
                     $tag_conf['enabled'] = false;
                     continue;
                 }
@@ -141,24 +149,27 @@ class admin_plugin_doxycode extends AdminPlugin {
             unset($tag_conf);
         }
 
-        if($cmd['save']) {
+        if ($cmd['save']) {
             // delete entries that are marked for deletion
-            foreach($this->tag_config as $key => $tag_conf) {
-                if(isset($tag_conf['delete']) && $tag_conf['delete']) {
+            foreach ($this->tag_config as $key => $tag_conf) {
+                if (isset($tag_conf['delete']) && $tag_conf['delete']) {
                     unset($this->tag_config[$key]);
 
                     // delete the tag file if it exists!
                     $filename = $this->helper->getTagFileDir() . $key . '.xml';
-                    if(file_exists($filename)) {
+                    if (file_exists($filename)) {
                         unlink($filename);
-                        msg(sprintf($this->getLang('admin_info_tag_deleted'),pathinfo($filename, PATHINFO_BASENAME)), 1);
+                        msg(sprintf(
+                            $this->getLang('admin_info_tag_deleted'),
+                            pathinfo($filename, PATHINFO_BASENAME)
+                        ), 1);
                     }
                 }
             }
 
             // handle renames
-            foreach($this->tag_config as $key => $tag_conf) {
-                if(isset($tag_conf['new_name']) && $key !== $tag_conf['new_name']) {
+            foreach ($this->tag_config as $key => $tag_conf) {
+                if (isset($tag_conf['new_name']) && $key !== $tag_conf['new_name']) {
                     // TODO: check if an entry with this newName already exists!
                     // if it already exists we can't rename it -> show msg to user!
                     $newName = $tag_conf['new_name'];
@@ -166,11 +177,13 @@ class admin_plugin_doxycode extends AdminPlugin {
                     $this->tag_config[$newName] = $tag_conf;
                     unset($this->tag_config[$newName]['new_name']);
 
-                    rename( $this->helper->getTagFileDir() . $key . 'xml', $this->helper->getTagFileDir() . $newName . '.xml');
+                    rename($this->helper->getTagFileDir()
+                        . $key . 'xml', $this->helper->getTagFileDir() . $newName . '.xml');
 
                     // TODO: rename tag in page!
                     // I looked into the move plugin
-                    // it might be possible to handle renaming if the move plugin supports custom types (currently only media and pages)
+                    // it might be possible to handle renaming
+                    // if the move plugin supports custom types (currently only media and pages)
 
                     // TODO: notify user through msg that the tag file was renamed!
                 }
@@ -183,7 +196,8 @@ class admin_plugin_doxycode extends AdminPlugin {
     /**
      * output appropriate html
      */
-    public function html() {
+    public function html()
+    {
         global $ID;#
         global $conf;
         global $lang;
@@ -194,7 +208,7 @@ class admin_plugin_doxycode extends AdminPlugin {
         $form = new Form(['enctype' => 'multipart/form-data']);
 
         // new file
-        $form->addElement(new dokuwiki\Form\InputElement('file','upload',$this->getLang('admin_upload')));
+        $form->addElement(new dokuwiki\Form\InputElement('file', 'upload', $this->getLang('admin_upload')));
 
         $form->addHTML('<br>');
         $form->addHTML('<br>');
@@ -225,25 +239,25 @@ class admin_plugin_doxycode extends AdminPlugin {
         // add body
         $form->addTagOpen('tbody');
 
-        foreach($this->tag_config as $key => $tag_conf) {
+        foreach ($this->tag_config as $key => $tag_conf) {
             $form->addTagOpen('tr');
 
             $form->addTagOpen('td');
             $checkbox = $form->addCheckbox('tag_config[' . $key . '][delete]')
                 ->useInput(false);
-                if($tag_conf['delete']) $checkbox->attrs(['checked' => 'checked']);
+                if ($tag_conf['delete']) $checkbox->attrs(['checked' => 'checked']);
             $form->addTagClose('td');
 
             $form->addTagOpen('td');
             $checkbox = $form->addCheckbox('tag_config[' . $key . '][enabled]')
                 ->useInput(false);
-            if($tag_conf['enabled']) $checkbox->attrs(['checked' => 'checked']);
+            if ($tag_conf['enabled']) $checkbox->attrs(['checked' => 'checked']);
             $form->addTagClose('td');
 
             $form->addTagOpen('td');
             $checkbox = $form->addCheckbox('tag_config[' . $key . '][force_runner]')
                 ->useInput(false);
-            if($tag_conf['force_runner']) $checkbox->attrs(['checked' => 'checked']);
+            if ($tag_conf['force_runner']) $checkbox->attrs(['checked' => 'checked']);
             $form->addTagClose('td');
 
             $form->addTagOpen('td');
@@ -252,13 +266,13 @@ class admin_plugin_doxycode extends AdminPlugin {
                 ->useInput(false);
 
             // add red highlight if this file does not exist
-            if(file_exists($this->helper->getFileName($key))) {
+            if (file_exists($this->helper->getFileName($key))) {
                 $new_name->attrs(['style' => 'background-color: LightGreen']);
             } else {
                 $new_name->attrs(['style' => 'background-color: LightCoral']);
             }
 
-            if(isset($tag_conf['new_name'])) {
+            if (isset($tag_conf['new_name'])) {
                 $new_name->val($tag_conf['new_name']);
             } else {
                 $new_name->val($key);
@@ -267,7 +281,7 @@ class admin_plugin_doxycode extends AdminPlugin {
 
             // print file mtime for better understanding of update mechanism by admin
             $form->addTagOpen('td');
-            if(file_exists($this->helper->getFileName($key))) {
+            if (file_exists($this->helper->getFileName($key))) {
                 $form->addLabel(dformat(@filemtime($this->helper->getFileName($key))));
             }
             $form->addTagClose('td');
@@ -292,11 +306,11 @@ class admin_plugin_doxycode extends AdminPlugin {
                 ->useInput(false)
                 ->val($tag_conf['update_period']);
 
-            if($tag_conf['update_period'] > 0) {
+            if ($tag_conf['update_period'] > 0) {
                 $timestamp = $conf['last_update'] ? $conf['last_update'] : 0;
                 $now = time();
 
-                if($now - $tag_conf['update_period'] >= $timestamp) {
+                if ($now - $tag_conf['update_period'] >= $timestamp) {
                     $period->attrs(['style' => 'background-color: LightGreen']);
                 } else {
                     $period->attrs(['style' => 'background-color: LightCoral']);
@@ -379,8 +393,8 @@ class admin_plugin_doxycode extends AdminPlugin {
         $form->addTagClose('table');
         $form->addTagClose('div');
 
-        $form->addButton('cmd[save]',$lang['btn_save'])->attrs(['accesskey' => 's']);
-        $form->addButton('cmd[update]',$lang['btn_update']);
+        $form->addButton('cmd[save]', $lang['btn_save'])->attrs(['accesskey' => 's']);
+        $form->addButton('cmd[update]', $lang['btn_update']);
 
         echo $form->toHTML();
 
@@ -393,8 +407,8 @@ class admin_plugin_doxycode extends AdminPlugin {
      *
      * @return bool
      */
-    public function forAdminOnly() {
+    public function forAdminOnly()
+    {
         return false;
     }
- 
 }

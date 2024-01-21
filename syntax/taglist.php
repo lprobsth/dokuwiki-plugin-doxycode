@@ -1,4 +1,5 @@
 <?php
+
 /**
  * DokuWiki Plugin doxycode (Taglist Syntax Component)
  *
@@ -8,34 +9,35 @@
 
 use dokuwiki\Extension\SyntaxPlugin;
 
-// must be run within Dokuwiki
-if(!defined('DOKU_INC')) die();
-
 /**
  * Class syntax_plugin_doxycode_taglist
- * 
+ *
  * This syntax plugin renders a table with all available tag files.
  * It can be used to inform users which tag files can be used by which names in the snippet syntax.
  */
-class syntax_plugin_doxycode_taglist extends SyntaxPlugin {
-
-    public function getType() {
+class syntax_plugin_doxycode_taglist extends SyntaxPlugin
+{
+    public function getType()
+    {
         return 'substition';
     }
 
-    public function getSort() {
+    public function getSort()
+    {
         // TODO: which sort number?
         return 159;
     }
 
-    public function connectTo($mode) {
-        $this->Lexer->addSpecialPattern('<listtagfiles.*?/>',$mode,'plugin_doxycode_taglist');
+    public function connectTo($mode)
+    {
+        $this->Lexer->addSpecialPattern('<listtagfiles.*?/>', $mode, 'plugin_doxycode_taglist');
     }
 
-    public function handle($match, $state, $pos, Doku_Handler $handler){
+    public function handle($match, $state, $pos, Doku_Handler $handler)
+    {
         static $args;
         switch ($state) {
-            case DOKU_LEXER_SPECIAL : 
+            case DOKU_LEXER_SPECIAL:
                 // TODO: do we expect parameters here?
                 // add columns like reload period, file state?
                 // TODO: implement option for only displaying enabled configurations!
@@ -48,10 +50,11 @@ class syntax_plugin_doxycode_taglist extends SyntaxPlugin {
     }
 
     /**
-     * 
+     *
      */
-    public function render($mode, Doku_Renderer $renderer, $data) {
-        if($mode != 'xhtml') return;
+    public function render($mode, Doku_Renderer $renderer, $data)
+    {
+        if ($mode != 'xhtml') return;
 
 
         /** @var helper_plugin_doxycode_tagmanager $tagmanager */
@@ -72,7 +75,7 @@ class syntax_plugin_doxycode_taglist extends SyntaxPlugin {
         $renderer->doc .= '</thead>';
 
         $renderer->doc .= '<tbody>';
-        foreach($config as $key => $conf) {
+        foreach ($config as $key => $conf) {
             $renderer->doc .= '<tr>';
             // TODO: display enabled state as locked checkbox
             $renderer->doc .= '<td>' . $conf['enabled'] . '</td>';

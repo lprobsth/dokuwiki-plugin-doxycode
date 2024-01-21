@@ -1,4 +1,5 @@
 <?php
+
 /*
  * default configuration settings
  *

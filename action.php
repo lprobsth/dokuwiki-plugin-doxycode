@@ -1,4 +1,5 @@
 <?php
+
 /**
  * DokuWiki Plugin doxycode (Action Component)
  *
@@ -6,51 +7,51 @@
  * @author      Lukas Probsthain <lukas.probsthain@gmail.com>
  */
 
-if(!defined('DOKU_INC')) die();
-
 use dokuwiki\Extension\ActionPlugin;
 use dokuwiki\HTTP\DokuHTTPClient;
-use dokuwiki\Remote\Api;
 use dokuwiki\Extension\Event;
-use dokuwiki\Cache\Cache; 
+use dokuwiki\Cache\Cache;
+use dokuwiki\Extension\EventHandler;
 
 /**
  * Class action_plugin_doxycode
- * 
+ *
  * This action component of the doxygen plugin handles the download of remote tag files,
  * build job/task execution, cache invalidation, and ajax calls for checking the job/task
  * execution and dynamic loading of finished code snippets.
- * 
+ *
  * @author      Lukas Probsthain <lukas.probsthain@gmail.com>
  */
-class action_plugin_doxycode extends ActionPlugin {
-
-    public function register(Doku_Event_Handler $controller) {
+class action_plugin_doxycode extends ActionPlugin
+{
+    public function register(EventHandler $controller)
+    {
         $controller->register_hook('INDEXER_TASKS_RUN', 'AFTER', $this, 'loadRemoteTagFiles');
         $controller->register_hook('INDEXER_TASKS_RUN', 'AFTER', $this, 'renderDoxyCodeSnippets');
         $controller->register_hook('PARSER_CACHE_USE', 'BEFORE', $this, 'beforeParserCacheUse');
         $controller->register_hook('AJAX_CALL_UNKNOWN', 'BEFORE', $this, 'ajaxCall');
         $controller->register_hook('TOOLBAR_DEFINE', 'AFTER', $this, 'insertTagButton');
-        $controller->register_hook('RPC_CALL_ADD','AFTER',$this,'add_rpc_all');
+        $controller->register_hook('RPC_CALL_ADD', 'AFTER', $this, 'addRpcMethod');
     }
     
     /**
      * Download remote doxygen tag files and place the in the tag file directory.
-     * 
+     *
      * Remote tag files are tag files that are publicly hosted on another website.
      * This task runner hook gets the tag file configuration for remote tag files and checks
      * if it is time to check the remote tag file again.
-     * 
+     *
      * If the time threshold is reached for checking again it tries to download the tag file again,
      * updates the 'last_update' timestamp in the configuration, and then checks if we have an updated
      * tag file by comparing the md5 of the cached tag file.
-     * 
+     *
      * The configuration with the updated 'last_update' timestamp is saved without modifying the mtime
      * of the configuration because the configuration file is listed as a file dependency among the used tag files
      * for the cached snippets. We only want to invalidate the cached snippets if the configuration really changes
      * or a new tag file is available.
      */
-    public function loadRemoteTagFiles(Event $event, $param) {
+    public function loadRemoteTagFiles(Event $event, $param)
+    {
         // get the tag files from the helper
 
         /** @var helper_plugin_doxycode_tagmanager $tagmanager */
@@ -63,18 +64,17 @@ class action_plugin_doxycode extends ActionPlugin {
 
         // only try to download a tag file if it is a remote file and enabled!
         // TODO: we could also use a filter function for filtering remote configurations with overdue updates
-        $filtered_config = $tagmanager->filterConfig($tag_config,['isConfigEnabled','isValidRemoteConfig']);
+        $filtered_config = $tagmanager->filterConfig($tag_config, ['isConfigEnabled','isValidRemoteConfig']);
 
         // loop over all tag file configurations
-        foreach($filtered_config as $key => &$conf) {
-
+        foreach ($filtered_config as $key => &$conf) {
             $now = time();
             $timestamp = $conf['last_update'] ? $conf['last_update'] : 0;
             $update_period = $conf['update_period'] ? $conf['update_period'] :  $this->getConf('update_period');
             $filename = $tagmanager->getTagFileDir() . $key . '.xml';
             
             // only try to update every $update_period amount of seconds
-            if($now - $update_period >= $timestamp) {
+            if ($now - $update_period >= $timestamp) {
                 // only process one thing per task runner run
                 $event->stopPropagation();
                 $event->preventDefault();
@@ -84,14 +84,14 @@ class action_plugin_doxycode extends ActionPlugin {
                 // on connection failures, we don't want to run the task runner constantly on failures!
                 // true: do not update the mtime of the configuration!
                 // if a new tag file is available we invalidate the cache if this tag file was used in a page!
-                $tagmanager->saveTagFileConfig($tag_config,true);
+                $tagmanager->saveTagFileConfig($tag_config, true);
 
-                $exists = False;    // if the file does not exist - just write now!
+                $exists = false;    // if the file does not exist - just write now!
                 $cachedHash = '';   // this is used to check if we really have a new file
 
                 // first read the old file and free memory so we do not exeed the limit!
-                if($cachedContent = @file_get_contents($filename)) {
-                    $exists = True;
+                if ($cachedContent = @file_get_contents($filename)) {
+                    $exists = true;
 
                     $cachedHash = md5($cachedContent);
 
@@ -121,7 +121,8 @@ class action_plugin_doxycode extends ActionPlugin {
         }
     }
 
-    public function renderDoxyCodeSnippets(Event $event) {
+    public function renderDoxyCodeSnippets(Event $event)
+    {
         global $ID;
 
         /** @var helper_plugin_doxycode_buildmanager $buildmanager */
@@ -131,20 +132,20 @@ class action_plugin_doxycode extends ActionPlugin {
         // a specific amount of tasks from getBuildTasks
         $tasks = $buildmanager->getBuildTasks();
 
-        if(sizeof($tasks) > 0) {
+        if (sizeof($tasks) > 0) {
             $event->stopPropagation();
             $event->preventDefault();
 
             $iterations = 0;
             // TODO: we should implement a maximum amount of tasks to run in one task runner instance!
-            foreach($tasks as $task) {
+            foreach ($tasks as $task) {
                 $iterations++;
 
-                if($iterations > $this->getConf('runner_max_tasks')) {
+                if ($iterations > $this->getConf('runner_max_tasks')) {
                     return;
                 }
 
-                if(!$buildmanager->runTask($task['TaskID'])) {
+                if (!$buildmanager->runTask($task['TaskID'])) {
                     // if we couldn't build abort the task runner
                     // this might happen if another instance is already running
                     return;
@@ -153,14 +154,15 @@ class action_plugin_doxycode extends ActionPlugin {
         }
     }
 
-    public function beforeParserCacheUse(Event $event) {
+    public function beforeParserCacheUse(Event $event)
+    {
         global $ID;
         $cache = $event->data;
         if (isset($cache->mode) && ($cache->mode == 'xhtml')) {
             // load doxycode meta that includes the used tag files and the cache files for the snippets
             $doxycode_meta = p_get_metadata($ID, 'doxycode');
 
-            if($doxycode_meta == null) {
+            if ($doxycode_meta == null) {
                 // doxycode was not used in this page!
                 return;
             }
@@ -171,7 +173,7 @@ class action_plugin_doxycode extends ActionPlugin {
             // in this case we first need to invalidate the page cache
             $tagfiles = $doxycode_meta['tagfiles'];
 
-            if($tagfiles != null) {
+            if ($tagfiles != null) {
                 // transform the list of tag files into an array that can be used by the helper
                 // ['tag_name' => []]: empty array as value since we do not have a loaded tag configuration here!
                 $tag_config = array_fill_keys($tagfiles, []);
@@ -180,12 +182,13 @@ class action_plugin_doxycode extends ActionPlugin {
                 $helper = plugin_load('helper', 'doxycode');
     
                 // transform the tag names to full file paths
-                $helper->getTagFiles($depends,$tag_config);
+                $helper->getTagFiles($depends, $tag_config);
             };
     
             // load the PHP file dependencies
             // if any file was changed, we want to do a reload
-            // the other dependencies (cache files) might not be enough, if e.g. the way we generate the hash names change
+            // the other dependencies (cache files) might not be enough,
+            // if e.g. the way we generate the hash names change
             // this might happen if the old cache files still exist and the meta data was not updated
             $helper->getPHPFileDependencies($depends);
 
@@ -197,10 +200,10 @@ class action_plugin_doxycode extends ActionPlugin {
             // if the XML cache is not existent we should check if the build is scheduled in the main syntax component
             $cache_files = $doxycode_meta['xml_cachefiles'];
 
-            foreach($cache_files as $cacheID) {
-                $cache_name = getCacheName($cacheID,".xml");
+            foreach ($cache_files as $cacheID) {
+                $cache_name = getCacheName($cacheID, ".xml");
 
-                if(!@file_exists($cache_name)) {
+                if (!@file_exists($cache_name)) {
                     $event->preventDefault();
                     $event->stopPropagation();
                     $event->result = false;
@@ -209,13 +212,14 @@ class action_plugin_doxycode extends ActionPlugin {
                 $this->addDependencies($cache, [$cache_name]);
             }
 
-            // if the HTML cache is not existent we should parse the XML in the main syntax component before the page loads
+            // if the HTML cache is not existent we should parse
+            // the XML in the main syntax component before the page loads
             $cache_files = $doxycode_meta['html_cachefiles'];
 
-            foreach($cache_files as $cacheID) {
-                $cache_name = getCacheName($cacheID,".html");
+            foreach ($cache_files as $cacheID) {
+                $cache_name = getCacheName($cacheID, ".html");
 
-                if(!@file_exists($cache_name)) {
+                if (!@file_exists($cache_name)) {
                     $event->preventDefault();
                     $event->stopPropagation();
                     $event->result = false;
@@ -229,7 +233,7 @@ class action_plugin_doxycode extends ActionPlugin {
 
     /**
      * Add extra dependencies to the cache
-     * 
+     *
      * copied from changes plugin
      */
     protected function addDependencies($cache, $depends)
@@ -253,8 +257,9 @@ class action_plugin_doxycode extends ActionPlugin {
     /**
      * handle ajax requests
      */
-    public function ajaxCall(Event $event) {
-        switch($event->data) {
+    public function ajaxCall(Event $event)
+    {
+        switch ($event->data) {
             case 'plugin_doxycode_check_status':
             case 'plugin_doxycode_get_snippet_html':
             case 'plugin_doxycode_get_tag_files':
@@ -267,7 +272,7 @@ class action_plugin_doxycode extends ActionPlugin {
         $event->stopPropagation();
         $event->preventDefault();
 
-        if($event->data === 'plugin_doxycode_check_status') {
+        if ($event->data === 'plugin_doxycode_check_status') {
             // the main syntax component has put placeholders into the page while rendering
             // the client tries to get the newest state for the doxygen builds executed through the buildmanager
 
@@ -279,8 +284,8 @@ class action_plugin_doxycode extends ActionPlugin {
             $hashes = $INPUT->arr('hashes');
     
             // get the job state for each XML file
-            foreach($hashes as &$hash) {
-                if(strlen($hash['xmlHash']) > 0) {
+            foreach ($hashes as &$hash) {
+                if (strlen($hash['xmlHash']) > 0) {
                     $hash['state'] = $buildmanager->getJobState($hash['xmlHash']);
                 }
             }
@@ -292,7 +297,7 @@ class action_plugin_doxycode extends ActionPlugin {
             return;
         } // plugin_doxycode_check_status
 
-        if($event->data === 'plugin_doxycode_get_snippet_html') {
+        if ($event->data === 'plugin_doxycode_get_snippet_html') {
             header('Content-Type: application/json');
             
             // a client tries to dynamically load the rendered code snippet
@@ -319,7 +324,7 @@ class action_plugin_doxycode extends ActionPlugin {
             $tag_conf = $tagmanager->getFilteredTagConfig($task_config['tagfiles']);
 
             $depends = [];
-            $helper->getHTMLFileDependencies($depends,$html_cacheID,$tag_conf);
+            $helper->getHTMLFileDependencies($depends, $xml_cacheID, $tag_conf);
 
             $data = [
                 'success' => false,
@@ -328,10 +333,10 @@ class action_plugin_doxycode extends ActionPlugin {
             ];
 
             // how will we generate the dependencies?
-            if($html_cache->useCache($depends)) {
+            if ($html_cache->useCache($depends)) {
                 // we have a valid HTML rendered!
 
-                if($cachedContent = @file_get_contents($html_cache->cache)) {
+                if ($cachedContent = @file_get_contents($html_cache->cache)) {
                     // add HTML cache to response
 
                     $data['html'] = $cachedContent;
@@ -345,18 +350,18 @@ class action_plugin_doxycode extends ActionPlugin {
             $job_config = $buildmanager->getJobConf($xml_cacheID);
 
             $depends = [];
-            $helper->getXMLFileDependencies($depends,$tag_conf);
+            $helper->getXMLFileDependencies($depends, $tag_conf);
             //set content type
 
-            if($xml_cache->useCache($depends)) {
+            if ($xml_cache->useCache($depends)) {
                 // we have a valid XML!
 
                 $xml_content = @file_get_contents($xml_cache->cache);
 
-                $rendered_text = $parser->renderXMLToDokuWikiCode($xml_content,$job_config['linenumbers'],$tag_conf);
+                $rendered_text = $parser->renderXMLToDokuWikiCode($xml_content, $job_config['linenumbers'], $tag_conf);
                 
                 // save content to cache
-                @file_put_contents($html_cache->cache,$rendered_text);
+                @file_put_contents($html_cache->cache, $rendered_text);
 
                 // add HTML to response
                 $data['html'] = $rendered_text;
@@ -371,7 +376,7 @@ class action_plugin_doxycode extends ActionPlugin {
             return;
         } // plugin_doxycode_get_snippet_html
 
-        if($event->data === 'plugin_doxycode_get_tag_files') {
+        if ($event->data === 'plugin_doxycode_get_tag_files') {
             // the client has requested a list of available tag file configurations
 
             /** @var helper_plugin_doxycode_tagmanager $tagmanager */
@@ -389,24 +394,24 @@ class action_plugin_doxycode extends ActionPlugin {
         }
     }
 
-    public function insertTagButton(Event $event) {
+    public function insertTagButton(Event $event)
+    {
         $event->data[] = array (
             'type' => 'doxycodeTagSelector',
             'title' => 'doxycode',
-            'icon' => DOKU_REL.'lib/plugins/doxycode/images/toolbar/doxycode.png',
+            'icon' => DOKU_REL . 'lib/plugins/doxycode/images/toolbar/doxycode.png',
             'open'   => '<doxycode>',
             'close'  => '</doxycode>',
             'block'  => false
         );
     }
 
-    public function add_rpc_all(&$event, $param){
-        $my_rpc_call=array(
+    public function addRpcMethod(&$event, $param)
+    {
+        $my_rpc_call = array(
             'doxycode.listTagFiles' => array('doxycode', 'listTagFiles'),
-            'doxycode.uploadTagFile'=>array('doxycode', 'uploadTagFile')
+            'doxycode.uploadTagFile' => array('doxycode', 'uploadTagFile')
         );
-        $event->data=array_merge($event->data,$my_rpc_call);
+        $event->data = array_merge($event->data, $my_rpc_call);
     }
 }
-
-?>
