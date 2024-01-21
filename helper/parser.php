@@ -189,7 +189,7 @@ class helper_plugin_doxycode_parser extends Plugin
 
         // match the external attribute to the tag file and extract the documentation URL
         foreach ($tag_conf as $key => $conf) {
-            if ($tagmanager->getTagFileDir() . $key . '.xml' === $external) {
+            if (realpath($tagmanager->getTagFileDir() . $key . '.xml') === $external) {
                 $output .= $conf['docu_url'];
                 break;
             }
