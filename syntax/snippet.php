@@ -323,7 +323,7 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin
                             }
                         }
 
-                        $renderer->doc .= '</div';
+                        $renderer->doc .= '</div>';
                     } else {
                         // if buildsuccess==true we want to parse the XML now
                         $job_state = helper_plugin_doxycode_buildmanager::STATE_FINISHED;
