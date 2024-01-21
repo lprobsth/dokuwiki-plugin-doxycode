@@ -324,7 +324,7 @@ class action_plugin_doxycode extends ActionPlugin
             $tag_conf = $tagmanager->getFilteredTagConfig($task_config['tagfiles']);
 
             $depends = [];
-            $helper->getHTMLFileDependencies($depends, $html_cacheID, $tag_conf);
+            $helper->getHTMLFileDependencies($depends, $xml_cacheID, $tag_conf);
 
             $data = [
                 'success' => false,
