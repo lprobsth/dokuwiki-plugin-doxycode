@@ -98,16 +98,21 @@ class syntax_plugin_doxycode_snippet extends SyntaxPlugin
         $remainingString = implode(' ', $parts);
     
         // Regular expression to match key="value" pairs and flag options
-        $pattern = '/(\w+)="([^"]*)"|(\w+)/';
+        $pattern = '/(\w+)=(?:"([^"]*)"|([^"\s]*))|(\w+)/';
         preg_match_all($pattern, $remainingString, $matches, PREG_SET_ORDER);
     
         foreach ($matches as $m) {
             if (!empty($m[1])) {
-                // This is a key="value" argument
-                $args[$m[1]] = $m[2];
-            } elseif (!empty($m[3])) {
+                if (!empty($m[2])) {
+                    // This is a key="value" argument
+                    $args[$m[1]] = $m[2];
+                } elseif (!empty($m[3])) {
+                    // This is a key=value argument
+                    $args[$m[1]] = $m[3];
+                }
+            } elseif (!empty($m[4])) {
                 // This is a flag option
-                $args[$m[3]] = 1;
+                $args[$m[4]] = 1;
             }
         }
 
