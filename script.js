@@ -13,6 +13,8 @@ jQuery(function(){
         STATE_ERROR: 5,
     };
 
+    var isLoadingSnippet = false;
+
     /**
      * Scan the document for doxycode markers that represent dynamically loaded code snippets.
      * 
@@ -164,6 +166,11 @@ jQuery(function(){
      * @author Lukas Probsthain <lukas.probsthain@gmail.com>
      */
     function loadSnippet(data) {
+        if (isLoadingSnippet) {
+            return;
+        }
+
+        isLoadingSnippet = true;
 
         jQuery.post(
             DOKU_BASE + 'lib/exe/ajax.php',
@@ -172,11 +179,13 @@ jQuery(function(){
                 hashes: data
             },
             function(response) {
+                isLoadingSnippet = false;
                 loadSnippetHtml(response);
             },
             'json'
         ).fail(function(jqXHR, textStatus, errorThrown) {
             console.error("AJAX error:", textStatus, errorThrown);
+            isLoadingSnippet = false;
         });
     }
 
