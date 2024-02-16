@@ -214,7 +214,7 @@ class helper_plugin_doxycode_buildmanager extends Plugin
         }
 
         // run doxygen on our file with XML output
-        $this->runDoxygen($tmp_dir, $tag_conf);
+        $buildsuccess = $this->runDoxygen($tmp_dir, $tag_conf);
 
         // delete tmp_dir
         if (!$conf['allowdebug']) {
@@ -224,7 +224,7 @@ class helper_plugin_doxycode_buildmanager extends Plugin
 
         $this->unlock();
 
-        return true;
+        return $buildsuccess;
     }
 
     /**
@@ -524,10 +524,12 @@ class helper_plugin_doxycode_buildmanager extends Plugin
             return false;
         }
 
-        // TODO: add plugin configuration for setting the path
-        $doxygenExecutable = '/usr/bin/doxygen';
+        $doxygenExecutable = $this->getConf('doxygen_executable');
 
-        // TODO: check if doxygen executable exists!
+        // check if doxygen executable exists!
+        if (!file_exists($doxygenExecutable)) {
+            return false;
+        }
 
         // Path to your Doxygen configuration file
         // TODO: use default doxygen config or allow admin to upload
