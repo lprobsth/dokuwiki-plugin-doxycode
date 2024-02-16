@@ -214,7 +214,7 @@ class helper_plugin_doxycode_buildmanager extends Plugin
         }
 
         // run doxygen on our file with XML output
-        $this->runDoxygen($tmp_dir, $tag_conf);
+        $buildsuccess = $this->runDoxygen($tmp_dir, $tag_conf);
 
         // delete tmp_dir
         if (!$conf['allowdebug']) {
@@ -224,7 +224,7 @@ class helper_plugin_doxycode_buildmanager extends Plugin
 
         $this->unlock();
 
-        return true;
+        return $buildsuccess;
     }
 
     /**
