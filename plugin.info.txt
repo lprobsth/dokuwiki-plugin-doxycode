@@ -1,7 +1,7 @@
 base   doxycode
 author Lukas Probsthain
 email  lukas.probsthain@gmail.com
-date   2023-02-16
+date   2024-02-16
 name   DoxyCode Plugin
 desc   Parse code in dokuwiki with cross referencing to doxygen documentation.
 url    https://www.dokuwiki.org/plugin:doxycode
