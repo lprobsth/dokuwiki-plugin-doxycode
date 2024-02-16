@@ -692,7 +692,7 @@ class helper_plugin_doxycode_buildmanager extends Plugin
 
         // get the oldest task first
         $rows = $this->db->queryAll(
-            'SELECT TaskID FROM Tasks WHERE State = ? ORDER BY Timestamp ASC LIMIT ?',
+            'SELECT TaskID FROM Tasks WHERE TaskID IS NOT NULL AND State = ? ORDER BY Timestamp ASC LIMIT ?',
             [self::STATE_SCHEDULED, $amount]
         );
     
